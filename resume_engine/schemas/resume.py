@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
+
+from resume_engine.utils.phone import format_phone_display
 
 
 class Experience(BaseModel):
@@ -28,6 +30,7 @@ class ResumeData(BaseModel):
     full_name: str
     email: str
     phone: str
+    phone_country_code: str = "+1"
     location: str = ""
     linkedin: str = ""
     headline: str = ""
@@ -47,7 +50,7 @@ class ResumeData(BaseModel):
     def to_text(self) -> str:
         lines = [
             self.full_name,
-            f"{self.email} | {self.phone}",
+            f"{self.email} | {format_phone_display(self.phone_country_code, self.phone)}",
             self.location,
             "",
             self.headline,

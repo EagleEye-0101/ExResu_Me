@@ -27,6 +27,7 @@ export interface Profile {
   full_name: string;
   email: string;
   phone: string;
+  phone_country_code?: string;
   location: string;
   linkedin: string;
   target_role: string;
@@ -106,6 +107,7 @@ export interface ResumeData {
   full_name: string;
   email: string;
   phone: string;
+  phone_country_code?: string;
   location: string;
   linkedin: string;
   headline: string;
@@ -155,6 +157,9 @@ export const api = {
       provider: string;
       draft?: Record<string, unknown>;
       wizard_step?: number;
+      cover_letter?: string;
+      parent_id?: number | null;
+      has_diff?: boolean;
     }>(`/resumes/${id}`),
   getDraft: (id: number) => request<Record<string, unknown>>(`/resumes/draft/${id}`),
   saveDraft: (data: {
@@ -206,4 +211,37 @@ export const api = {
       { method: "POST", body: JSON.stringify({ format }) }
     ),
   downloadUrl: (id: number, format: string) => `${API_BASE}/resumes/${id}/download?format=${format}`,
+  keywordHeatmap: (id: number) =>
+    request<{ matched: string[]; missing: string[]; keywords: string[] }>(
+      `/resumes/${id}/keyword-heatmap`
+    ),
+  cloneResume: (id: number, title?: string) =>
+    request<{ id: number; title: string }>(`/resumes/${id}/clone`, {
+      method: "POST",
+      body: JSON.stringify({ title: title || "" }),
+    }),
+  getDiff: (id: number) =>
+    request<{ previous: ResumeData | null; current: ResumeData | null }>(`/resumes/${id}/diff`),
+  generateCoverLetter: (id: number, provider?: string) =>
+    request<{ cover_letter: string }>(`/resumes/${id}/cover-letter?provider=${provider || ""}`, {
+      method: "POST",
+    }),
+  getCoverLetter: (id: number) => request<{ cover_letter: string }>(`/resumes/${id}/cover-letter`),
+  interviewPrep: (id: number, provider?: string) =>
+    request<{ questions: { question: string; tip: string }[] }>(
+      `/resumes/${id}/interview-prep?provider=${provider || ""}`,
+      { method: "POST" }
+    ),
+  coachBullet: (bullet: string, role: string, provider?: string) =>
+    request<{ question: string; suggestion: string }>("/coach/bullet", {
+      method: "POST",
+      body: JSON.stringify({ bullet, role, provider }),
+    }),
+  importResume: async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/import/resume`, { method: "POST", body: form });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json() as Promise<{ profile_id: number; parsed: Record<string, unknown> }>;
+  },
 };

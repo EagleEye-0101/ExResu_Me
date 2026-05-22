@@ -5,6 +5,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 
 from resume_engine.schemas.resume import ResumeData
+from resume_engine.utils.phone import format_phone_display
 
 
 def export_docx(resume: ResumeData, output_path: Path) -> Path:
@@ -25,7 +26,10 @@ def export_docx(resume: ResumeData, output_path: Path) -> Path:
     name_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # Contact
-    contact_parts = [resume.email, resume.phone]
+    contact_parts = [
+        resume.email,
+        format_phone_display(resume.phone_country_code, resume.phone),
+    ]
     if resume.location:
         contact_parts.append(resume.location)
     if resume.linkedin:

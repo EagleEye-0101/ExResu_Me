@@ -4,6 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { EndDateInput } from "@/components/EndDateInput";
 import { FormField, MonthInput, TextInput } from "@/components/FormField";
+import { MangaButton } from "@/components/MangaButton";
+import { PhoneInput } from "@/components/PhoneInput";
+import { guessDefaultDial } from "@/lib/countries";
 import {
   api,
   EducationInput,
@@ -26,6 +29,7 @@ const emptyProfile = (): Omit<Profile, "id"> => ({
   full_name: "",
   email: "",
   phone: "",
+  phone_country_code: "+1",
   location: "",
   linkedin: "",
   target_role: "",
@@ -83,6 +87,7 @@ function WizardContent() {
   }, [editProfileId, draftIdParam]);
 
   useEffect(() => {
+    setProfile((p) => ({ ...p, phone_country_code: p.phone_country_code || guessDefaultDial() }));
     api.getSettings().then((s) => {
       if (s.default_ai_provider) setProvider(s.default_ai_provider);
     }).catch(() => {});
@@ -163,7 +168,25 @@ function WizardContent() {
     <div className="space-y-6">
       <div className="speech-bubble">
         <h1 className="font-display text-4xl">Resume Quest</h1>
-        <p className="text-[var(--muted)]">{STEP_HINTS[step]}</p>
+        <p className="text-manga-muted">{STEP_HINTS[step]}</p>
+        <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-manga-accent">
+          <input
+            type="file"
+            accept=".txt,.docx"
+            className="hidden"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              try {
+                const r = await api.importResume(f);
+                router.push(`/wizard?profile=${r.profile_id}`);
+              } catch (err) {
+                setErrors([err instanceof Error ? err.message : "Import failed"]);
+              }
+            }}
+          />
+          <span className="manga-btn manga-btn-ghost !text-xs">Import .txt / .docx</span>
+        </label>
       </div>
 
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
@@ -208,25 +231,21 @@ function WizardContent() {
       </div>
 
       <div className="flex flex-wrap justify-between gap-3">
-        <button onClick={back} disabled={step === 0} className="btn-ghost disabled:opacity-40">
+        <MangaButton variant="ghost" onClick={back} disabled={step === 0}>
           ← Back
-        </button>
+        </MangaButton>
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={saveDraft}
-            disabled={savingDraft}
-            className="btn-secondary"
-          >
+          <MangaButton variant="secondary" onClick={saveDraft} disabled={savingDraft}>
             {savingDraft ? "Saving..." : "Save Draft"}
-          </button>
+          </MangaButton>
           {step < STEPS.length - 1 ? (
-            <button onClick={next} className="btn-primary">
+            <MangaButton variant="primary" onClick={next}>
               Next →
-            </button>
+            </MangaButton>
           ) : (
-            <button onClick={handleGenerate} disabled={loading} className="btn-primary">
-              {loading ? "Summoning AI..." : "Generate Resume!"}
-            </button>
+            <MangaButton variant="primary" burst onClick={handleGenerate} disabled={loading}>
+              {loading ? "Summoning AI..." : "Generate!"}
+            </MangaButton>
           )}
         </div>
       </div>
@@ -258,7 +277,12 @@ function StepProfile({
         <TextInput value={profile.email} onChange={(v) => update({ email: v })} type="email" required />
       </FormField>
       <FormField label="Phone" required>
-        <TextInput value={profile.phone} onChange={(v) => update({ phone: v })} type="tel" required />
+        <PhoneInput
+          countryCode={profile.phone_country_code || "+1"}
+          phone={profile.phone}
+          onCountryChange={(v) => update({ phone_country_code: v })}
+          onPhoneChange={(v) => update({ phone: v })}
+        />
       </FormField>
       <FormField label="Location" hint="optional">
         <TextInput value={profile.location} onChange={(v) => update({ location: v })} />
@@ -368,9 +392,9 @@ function StepExperience({
           </FormField>
         </div>
       ))}
-      <button type="button" onClick={addJob} className="btn-teal w-full sm:w-auto">
+      <MangaButton variant="teal" onClick={addJob}>
         + Add job
-      </button>
+      </MangaButton>
     </div>
   );
 }

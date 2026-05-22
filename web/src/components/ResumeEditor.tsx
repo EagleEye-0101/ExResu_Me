@@ -1,6 +1,7 @@
 "use client";
 
 import { FormField, TextInput } from "@/components/FormField";
+import { PhoneInput } from "@/components/PhoneInput";
 import { EndDateInput } from "@/components/EndDateInput";
 import { MonthInput } from "@/components/FormField";
 import { ResumeData, ExperienceInput, EducationInput } from "@/lib/api";
@@ -43,7 +44,12 @@ export function ResumeEditor({
           <TextInput value={resume.email} onChange={(v) => patch({ email: v })} type="email" />
         </FormField>
         <FormField label="Phone" required>
-          <TextInput value={resume.phone} onChange={(v) => patch({ phone: v })} />
+          <PhoneInput
+            countryCode={resume.phone_country_code || "+1"}
+            phone={resume.phone}
+            onCountryChange={(v) => patch({ phone_country_code: v })}
+            onPhoneChange={(v) => patch({ phone: v })}
+          />
         </FormField>
         <FormField label="Location">
           <TextInput value={resume.location} onChange={(v) => patch({ location: v })} />

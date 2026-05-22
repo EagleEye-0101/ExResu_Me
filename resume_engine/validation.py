@@ -46,8 +46,11 @@ def is_valid_email(value: str) -> bool:
     return bool(value and EMAIL.match(value.strip()))
 
 
-def is_valid_phone(value: str) -> bool:
-    return bool(value and PHONE.match(value.strip()))
+def is_valid_phone(value: str, country_code: str = "+1") -> bool:
+    from resume_engine.utils.phone import validate_phone as vp
+
+    ok, _ = vp(country_code, value)
+    return ok
 
 
 def is_valid_linkedin(value: str) -> bool:
@@ -66,9 +69,10 @@ def validate_profile_step(data: dict[str, Any], *, strict: bool = False) -> list
             errors.append("Valid email is required (e.g. you@company.com)")
     elif strict:
         errors.append("Email is required")
+    cc = data.get("phone_country_code") or "+1"
     if strict or (data.get("phone") or "").strip():
-        if not is_valid_phone(data.get("phone", "")):
-            errors.append("Valid phone is required (7–20 digits)")
+        if not is_valid_phone(data.get("phone", ""), cc):
+            errors.append("Valid phone number required for selected country code")
     elif strict:
         errors.append("Phone is required")
     if (data.get("linkedin") or "").strip() and not is_valid_linkedin(data.get("linkedin", "")):

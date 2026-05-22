@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { MangaButton } from "@/components/MangaButton";
 import { api, Profile, ResumeListItem, ResumeStats } from "@/lib/api";
 
 type Tab = "all" | "finished" | "draft";
@@ -59,9 +60,9 @@ export default function DashboardPage() {
             <p className="mt-2 text-lg text-manga-muted">
               Build, edit anytime, score for ATS, export when ready.
             </p>
-            <Link href="/wizard" className="btn-primary mt-5 inline-block">
+            <MangaButton href="/wizard" variant="primary" burst className="mt-5">
               Start New Resume
-            </Link>
+            </MangaButton>
           </div>
           <div
             className="hidden shrink-0 font-display text-6xl text-manga-accent/25 sm:block sm:text-7xl"
@@ -91,14 +92,14 @@ export default function DashboardPage() {
           <h2 className="font-display text-3xl text-manga-text">My Resumes</h2>
           <div className="flex flex-wrap gap-2">
             {(["all", "finished", "draft"] as Tab[]).map((t) => (
-              <button
+              <MangaButton
                 key={t}
-                type="button"
+                variant={tab === t ? "primary" : "ghost"}
                 onClick={() => setTab(t)}
-                className={`btn text-sm capitalize ${tab === t ? "btn-primary" : "btn-ghost"}`}
+                className="!text-xs capitalize"
               >
                 {t}
-              </button>
+              </MangaButton>
             ))}
           </div>
         </div>
@@ -108,9 +109,9 @@ export default function DashboardPage() {
             <p className="font-display text-xl text-manga-text">
               {tab === "draft" ? "No drafts yet — save progress in the wizard!" : "No resumes here yet."}
             </p>
-            <Link href="/wizard" className="btn-teal mt-4 inline-block">
+            <MangaButton href="/wizard" variant="teal" className="mt-4">
               Create one now
-            </Link>
+            </MangaButton>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">

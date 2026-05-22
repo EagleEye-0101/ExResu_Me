@@ -21,6 +21,7 @@ RESUME_JSON_SCHEMA = {
         "full_name": {"type": "string"},
         "email": {"type": "string"},
         "phone": {"type": "string"},
+        "phone_country_code": {"type": "string"},
         "location": {"type": "string"},
         "linkedin": {"type": "string"},
         "headline": {"type": "string"},

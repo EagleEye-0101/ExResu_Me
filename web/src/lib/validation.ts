@@ -38,7 +38,8 @@ export function validateStep(
     if (!profile.email.trim()) errors.push("Email is required");
     else if (!EMAIL.test(profile.email)) errors.push("Enter a valid email");
     if (!profile.phone.trim()) errors.push("Phone is required");
-    else if (!PHONE.test(profile.phone)) errors.push("Enter a valid phone number");
+    else if (!PHONE.test(profile.phone.replace(/\s/g, "")))
+      errors.push("Enter a valid phone number for your country");
     if (profile.linkedin.trim() && !profile.linkedin.toLowerCase().includes("linkedin.com")) {
       errors.push("LinkedIn should be a linkedin.com URL");
     }

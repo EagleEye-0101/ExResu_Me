@@ -52,6 +52,16 @@ def _migrate_columns(engine):
         alters.append("ALTER TABLE resumes ADD COLUMN draft_json TEXT DEFAULT ''")
     if "wizard_step" not in cols:
         alters.append("ALTER TABLE resumes ADD COLUMN wizard_step INTEGER DEFAULT 0")
+    if "parent_id" not in cols:
+        alters.append("ALTER TABLE resumes ADD COLUMN parent_id INTEGER")
+    if "previous_resume_json" not in cols:
+        alters.append("ALTER TABLE resumes ADD COLUMN previous_resume_json TEXT DEFAULT ''")
+    if "cover_letter" not in cols:
+        alters.append("ALTER TABLE resumes ADD COLUMN cover_letter TEXT DEFAULT ''")
+    if "profiles" in insp.get_table_names():
+        pcols = {c["name"] for c in insp.get_columns("profiles")}
+        if "phone_country_code" not in pcols:
+            alters.append("ALTER TABLE profiles ADD COLUMN phone_country_code VARCHAR(8) DEFAULT '+1'")
     with engine.connect() as conn:
         for sql in alters:
             conn.execute(text(sql))

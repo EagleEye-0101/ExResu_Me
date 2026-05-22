@@ -16,6 +16,7 @@ class Profile(Base):
     full_name = Column(String(200), nullable=False)
     email = Column(String(200), nullable=False)
     phone = Column(String(50), nullable=False)
+    phone_country_code = Column(String(8), default="+1")
     location = Column(String(200), default="")
     linkedin = Column(String(300), default="")
     target_role = Column(String(200), default="")
@@ -43,6 +44,9 @@ class ResumeRecord(Base):
     wizard_step = Column(Integer, default=0)
     ats_score = Column(Float, default=0.0)
     provider = Column(String(50), default="")
+    parent_id = Column(Integer, nullable=True)
+    previous_resume_json = Column(Text, default="")
+    cover_letter = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

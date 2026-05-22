@@ -22,6 +22,7 @@ class ProfileCreate(BaseModel):
     full_name: str
     email: str
     phone: str
+    phone_country_code: str = "+1"
     location: str = ""
     linkedin: str = ""
     target_role: str = ""

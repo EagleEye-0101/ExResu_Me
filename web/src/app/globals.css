@@ -76,46 +76,164 @@
     border-top: 14px solid #1a1a1a;
   }
 
-  .btn {
+  /* Legacy aliases map to manga buttons */
+  .btn,
+  .manga-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.75rem;
-    border: 3px solid #1a1a1a;
-    padding: 0.5rem 1.25rem;
-    font-weight: 700;
-    font-family: "Comic Neue", cursive;
-    box-shadow: 4px 4px 0 #1a1a1a;
-    transition: transform 0.15s, box-shadow 0.15s;
+    gap: 0.35rem;
+    border-radius: 0.85rem;
+    border: 4px solid #1a1a1a;
+    padding: 0.55rem 1.35rem;
+    font-weight: 800;
+    font-family: "Bangers", "Comic Neue", cursive;
+    font-size: 1.05rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: 5px 5px 0 #1a1a1a;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s;
     cursor: pointer;
     color: #1a1a1a;
+    text-decoration: none;
+    position: relative;
   }
 
-  .btn:hover:not(:disabled) {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #1a1a1a;
+  .btn:hover:not(:disabled),
+  .manga-btn:hover:not(:disabled) {
+    transform: translate(-3px, -3px);
+    box-shadow: 8px 8px 0 #1a1a1a;
+    filter: saturate(1.1);
   }
 
-  .btn:disabled {
-    opacity: 0.5;
+  .btn:active:not(:disabled),
+  .manga-btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 #1a1a1a;
+  }
+
+  .btn:disabled,
+  .manga-btn:disabled {
+    opacity: 0.55;
     cursor: not-allowed;
+    transform: none;
   }
 
-  .btn-primary {
-    background-color: #ff6b9d;
-    color: #ffffff;
+  .btn-primary,
+  .manga-btn-primary {
+    background: linear-gradient(180deg, #ff8eb3 0%, #ff6b9d 55%, #ff4d88 100%);
+    color: #fff;
+    text-shadow: 1px 1px 0 #9d174d;
   }
 
-  .btn-secondary {
-    background-color: #ffe66d;
+  .manga-btn-primary::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: radial-gradient(#fff6 1px, transparent 1px);
+    background-size: 6px 6px;
+    opacity: 0.35;
+    pointer-events: none;
   }
 
-  .btn-ghost {
-    background-color: #ffffff;
+  .btn-secondary,
+  .manga-btn-secondary {
+    background: linear-gradient(180deg, #fff3a3 0%, #ffe66d 100%);
   }
 
-  .btn-teal {
-    background-color: #4ecdc4;
+  .manga-btn-secondary:hover:not(:disabled)::before {
+    content: "〰";
+    position: absolute;
+    left: -0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    opacity: 0.6;
+  }
+
+  .btn-ghost,
+  .manga-btn-ghost {
+    background: #fff;
+    border-style: dashed;
+  }
+
+  .btn-teal,
+  .manga-btn-teal {
+    background: linear-gradient(180deg, #7ee8e0 0%, #4ecdc4 100%);
+  }
+
+  .manga-btn-burst::before {
+    content: "★";
+    margin-right: 0.15rem;
+    animation: manga-pulse 1s ease infinite;
+  }
+
+  .nav-pill {
+    border-radius: 9999px;
+    border: 3px solid #1a1a1a;
+    padding: 0.4rem 1rem;
+    font-family: "Bangers", cursive;
+    letter-spacing: 0.08em;
+    box-shadow: 3px 3px 0 #1a1a1a;
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+
+  .nav-pill:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 #1a1a1a;
+  }
+
+  @keyframes manga-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+  }
+
+  [data-theme="dark"] body {
+    background-color: #1a1428;
+    background-image: radial-gradient(circle, #2d2640 1.5px, transparent 1.5px);
+    color: #f5f0ff;
+  }
+
+  [data-theme="dark"] .manga-panel,
+  [data-theme="dark"] .speech-bubble {
+    background-color: #252038;
+    border-color: #f5f0ff;
+    color: #f5f0ff;
+  }
+
+  [data-theme="dark"] .input {
+    background-color: #1a1428;
+    border-color: #f5f0ff;
+    color: #f5f0ff;
+  }
+
+  .sticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    border: 2px solid #1a1a1a;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    transform: rotate(-3deg);
+    box-shadow: 2px 2px 0 #1a1a1a;
+  }
+
+  .kw-match {
+    background: #2dd4a833;
+    border-bottom: 2px solid #2dd4a8;
+  }
+
+  .kw-miss {
+    background: #ff475733;
+    border-bottom: 2px dashed #ff4757;
   }
 
   .input {

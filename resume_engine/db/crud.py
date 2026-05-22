@@ -13,6 +13,7 @@ def _profile_to_response(row: Profile) -> ProfileResponse:
         full_name=row.full_name,
         email=row.email,
         phone=row.phone,
+        phone_country_code=getattr(row, "phone_country_code", None) or "+1",
         location=row.location or "",
         linkedin=row.linkedin or "",
         target_role=row.target_role or "",
@@ -31,6 +32,7 @@ def create_profile(db: Session, data: ProfileCreate) -> ProfileResponse:
         full_name=data.full_name,
         email=data.email,
         phone=data.phone,
+        phone_country_code=data.phone_country_code or "+1",
         location=data.location,
         linkedin=data.linkedin,
         target_role=data.target_role,
@@ -55,6 +57,7 @@ def update_profile(db: Session, profile_id: int, data: ProfileCreate) -> Profile
     row.full_name = data.full_name
     row.email = data.email
     row.phone = data.phone
+    row.phone_country_code = data.phone_country_code or "+1"
     row.location = data.location
     row.linkedin = data.linkedin
     row.target_role = data.target_role
@@ -256,3 +259,47 @@ def delete_resume(db: Session, resume_id: int) -> bool:
     db.delete(row)
     db.commit()
     return True
+
+
+def clone_resume(db: Session, resume_id: int, title: str = "") -> ResumeRecord | None:
+    result = get_resume(db, resume_id)
+    if not result:
+        return None
+    row, resume = result
+    if not resume:
+        return None
+    new_title = title or f"{row.title or 'Resume'} (copy)"
+    new_row = ResumeRecord(
+        profile_id=row.profile_id,
+        title=new_title[:300],
+        status="finished",
+        job_description=row.job_description,
+        resume_json=resume.model_dump_json(),
+        ats_score=row.ats_score,
+        provider=row.provider,
+        parent_id=row.id,
+    )
+    db.add(new_row)
+    db.commit()
+    db.refresh(new_row)
+    return new_row
+
+
+def snapshot_before_optimize(db: Session, resume_id: int) -> None:
+    result = get_resume(db, resume_id)
+    if not result:
+        return
+    row, resume = result
+    if resume:
+        row.previous_resume_json = resume.model_dump_json()
+        db.commit()
+
+
+def save_cover_letter(db: Session, resume_id: int, text: str) -> ResumeRecord | None:
+    row = db.query(ResumeRecord).filter(ResumeRecord.id == resume_id).first()
+    if not row:
+        return None
+    row.cover_letter = text
+    db.commit()
+    db.refresh(row)
+    return row

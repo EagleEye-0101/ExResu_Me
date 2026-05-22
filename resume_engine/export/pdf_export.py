@@ -7,6 +7,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import ListItem, ListFlowable, Paragraph, SimpleDocTemplate, Spacer
 
 from resume_engine.schemas.resume import ResumeData
+from resume_engine.utils.phone import format_phone_display
 
 
 def export_pdf(resume: ResumeData, output_path: Path) -> Path:
@@ -69,7 +70,10 @@ def export_pdf(resume: ResumeData, output_path: Path) -> Path:
     story = []
     story.append(Paragraph(resume.full_name, title_style))
 
-    contact_parts = [resume.email, resume.phone]
+    contact_parts = [
+        resume.email,
+        format_phone_display(resume.phone_country_code, resume.phone),
+    ]
     if resume.location:
         contact_parts.append(resume.location)
     if resume.linkedin:

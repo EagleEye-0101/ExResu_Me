@@ -6,7 +6,8 @@ def sample_resume() -> ResumeData:
     return ResumeData(
         full_name="Jane Doe",
         email="jane@example.com",
-        phone="555-0100",
+        phone="5550100",
+        phone_country_code="+1",
         location="New York, NY",
         headline="Senior Software Engineer",
         summary="Experienced engineer with 8 years building scalable web applications and leading cross-functional teams.",

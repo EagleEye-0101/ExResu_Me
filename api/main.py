@@ -50,6 +50,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from api.features_routes import router as features_router  # noqa: E402
+
+app.include_router(features_router, prefix="/api")
+
 
 def get_session():
     yield from get_db()
@@ -213,6 +217,9 @@ def resumes_get(resume_id: int, db: Session = Depends(get_session)):
         "resume": resume.model_dump(),
         "ats_report": report.model_dump(),
         "provider": row.provider,
+        "cover_letter": row.cover_letter or "",
+        "parent_id": row.parent_id,
+        "has_diff": bool(row.previous_resume_json),
     }
 
 
@@ -332,6 +339,9 @@ async def resumes_generate(req: GenerateRequest, db: Session = Depends(get_sessi
     except Exception as e:
         raise HTTPException(500, f"AI generation failed: {e}") from e
 
+    if not getattr(resume, "phone_country_code", None):
+        resume.phone_country_code = getattr(profile, "phone_country_code", None) or "+1"
+
     report = score_resume(resume, req.job_description)
     provider = req.provider or cfg.get("default_ai_provider") or settings.default_ai_provider
 
@@ -395,6 +405,7 @@ async def resumes_optimize(req: OptimizeRequest, db: Session = Depends(get_sessi
             "message": "No missing keywords to optimize",
         }
 
+    crud.snapshot_before_optimize(db, req.resume_id)
     cfg = get_runtime_config(db)
     try:
         improved = await optimize_resume(
@@ -407,6 +418,9 @@ async def resumes_optimize(req: OptimizeRequest, db: Session = Depends(get_sessi
         )
     except Exception as e:
         raise HTTPException(500, f"Optimization failed: {e}") from e
+
+    if not improved.phone_country_code:
+        improved.phone_country_code = getattr(resume, "phone_country_code", "+1") or "+1"
 
     new_report = score_resume(improved, row.job_description or "")
     crud.update_resume_record(db, row.id, improved, new_report.composite_score)
