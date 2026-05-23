@@ -6,6 +6,8 @@ import { EndDateInput } from "@/components/EndDateInput";
 import { FormField, MonthInput, TextInput } from "@/components/FormField";
 import { MangaButton } from "@/components/MangaButton";
 import { PhoneInput } from "@/components/PhoneInput";
+import { SkillsInput } from "@/components/SkillsInput";
+import { TemplatePicker } from "@/components/TemplatePicker";
 import { guessDefaultDial } from "@/lib/countries";
 import {
   api,
@@ -54,6 +56,7 @@ function WizardContent() {
   const [draftId, setDraftId] = useState<number | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [provider, setProvider] = useState("ollama");
+  const [templateId, setTemplateId] = useState("professional");
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -155,7 +158,13 @@ function WizardContent() {
         pid = created.id;
         setProfileId(pid);
       }
-      const result = await api.generate(pid!, jobDescription, provider, draftId ?? undefined);
+      const result = await api.generate(
+        pid!,
+        jobDescription,
+        provider,
+        draftId ?? undefined,
+        templateId
+      );
       router.push(`/resume/${result.id}`);
     } catch (e) {
       setErrors([e instanceof Error ? e.message : "Generation failed"]);
@@ -172,7 +181,7 @@ function WizardContent() {
         <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-manga-accent">
           <input
             type="file"
-            accept=".txt,.docx"
+            accept=".txt,.docx,.pdf"
             className="hidden"
             onChange={async (e) => {
               const f = e.target.files?.[0];
@@ -185,7 +194,7 @@ function WizardContent() {
               }
             }}
           />
-          <span className="manga-btn manga-btn-ghost !text-xs">Import .txt / .docx</span>
+          <span className="manga-btn manga-btn-ghost !text-xs">Import .txt / .docx / .pdf</span>
         </label>
       </div>
 
@@ -213,7 +222,12 @@ function WizardContent() {
           <StepJobDescription jobDescription={jobDescription} setJobDescription={setJobDescription} />
         )}
         {step === 5 && (
-          <StepGenerate provider={provider} setProvider={setProvider} />
+          <StepGenerate
+            provider={provider}
+            setProvider={setProvider}
+            templateId={templateId}
+            setTemplateId={setTemplateId}
+          />
         )}
 
         {errors.length > 0 && (
@@ -276,19 +290,28 @@ function StepProfile({
       <FormField label="Email" required hint="for recruiters">
         <TextInput value={profile.email} onChange={(v) => update({ email: v })} type="email" required />
       </FormField>
-      <FormField label="Phone" required>
-        <PhoneInput
-          countryCode={profile.phone_country_code || "+1"}
-          phone={profile.phone}
-          onCountryChange={(v) => update({ phone_country_code: v })}
-          onPhoneChange={(v) => update({ phone: v })}
-        />
-      </FormField>
+      <div className="sm:col-span-2">
+        <FormField label="Phone" required hint="country code + number in one field">
+          <PhoneInput
+            countryCode={profile.phone_country_code || "+1"}
+            phone={profile.phone}
+            onCountryChange={(v) => update({ phone_country_code: v })}
+            onPhoneChange={(v) => update({ phone: v })}
+          />
+        </FormField>
+      </div>
       <FormField label="Location" hint="optional">
         <TextInput value={profile.location} onChange={(v) => update({ location: v })} />
       </FormField>
       <FormField label="LinkedIn" hint="optional">
         <TextInput value={profile.linkedin} onChange={(v) => update({ linkedin: v })} placeholder="https://linkedin.com/in/..." />
+      </FormField>
+      <FormField label="GitHub" hint="optional — used in Professional layout">
+        <TextInput
+          value={(profile as { github?: string }).github || ""}
+          onChange={(v) => update({ github: v } as Partial<Omit<Profile, "id">>)}
+          placeholder="github.com/username"
+        />
       </FormField>
       <FormField label="Target role" hint="optional">
         <TextInput value={profile.target_role} onChange={(v) => update({ target_role: v })} />
@@ -439,20 +462,10 @@ function StepEducation({ profile, update }: { profile: Omit<Profile, "id">; upda
 }
 
 function StepSkills({ profile, update }: { profile: Omit<Profile, "id">; update: (p: Partial<Omit<Profile, "id">>) => void }) {
-  const count = profile.skills.filter((s) => s.trim()).length;
   return (
     <div>
-      <FormField label="Skills" hint={`${count}/3 min for generate`}>
-        <textarea
-          className="input min-h-[120px]"
-          value={profile.skills.join(", ")}
-          onChange={(e) =>
-            update({
-              skills: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-            })
-          }
-          placeholder="Python, React, AWS, Leadership..."
-        />
+      <FormField label="Skills" hint="each skill is counted separately">
+        <SkillsInput skills={profile.skills} onChange={(skills) => update({ skills })} minForGenerate={3} />
       </FormField>
     </div>
   );
@@ -483,9 +496,13 @@ function StepJobDescription({
 function StepGenerate({
   provider,
   setProvider,
+  templateId,
+  setTemplateId,
 }: {
   provider: string;
   setProvider: (v: string) => void;
+  templateId: string;
+  setTemplateId: (v: string) => void;
 }) {
   const [providers, setProviders] = useState<{ id: string; name: string; requires_key: boolean }[]>([]);
 
@@ -494,10 +511,13 @@ function StepGenerate({
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <p className="rounded-xl bg-[var(--accent-2)]/20 p-4 text-sm">
         AI uses <strong>only your facts</strong> — no fake employers. Keys from Settings apply here.
       </p>
+      <FormField label="Resume layout">
+        <TemplatePicker value={templateId} onChange={setTemplateId} />
+      </FormField>
       <FormField label="AI provider">
         <select className="input" value={provider} onChange={(e) => setProvider(e.target.value)}>
           {providers.map((p) => (

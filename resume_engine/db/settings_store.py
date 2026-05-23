@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from resume_engine.ai.provider_ids import normalize_provider_id
 from resume_engine.db.models import AppSetting
 
 # Keys stored in DB (local only — never commit DB file)
@@ -54,6 +55,7 @@ def get_all_settings(db: Session) -> dict[str, Any]:
             result[key] = _mask(val) if val else ""
             result[f"{key}_set"] = bool(val)
         else:
+            val = normalize_provider_id(val) if key == "default_ai_provider" else val
             result[key] = val
     return result
 
@@ -64,7 +66,9 @@ def get_runtime_config(db: Session) -> dict[str, str]:
 
     rows = {r.key: r.value for r in db.query(AppSetting).all()}
     return {
-        "default_ai_provider": rows.get("default_ai_provider") or settings.default_ai_provider,
+        "default_ai_provider": normalize_provider_id(
+            rows.get("default_ai_provider") or settings.default_ai_provider
+        ),
         "openai_api_key": rows.get("openai_api_key") or settings.openai_api_key,
         "openai_model": rows.get("openai_model") or settings.openai_model,
         "anthropic_api_key": rows.get("anthropic_api_key") or settings.anthropic_api_key,
@@ -79,6 +83,8 @@ def get_runtime_config(db: Session) -> dict[str, str]:
 
 
 def update_settings(db: Session, payload: dict[str, str]) -> dict[str, Any]:
+    if payload.get("default_ai_provider"):
+        payload["default_ai_provider"] = normalize_provider_id(payload["default_ai_provider"])
     for key, value in payload.items():
         if key not in SETTING_KEYS:
             continue

@@ -126,9 +126,28 @@ def validate_education_step(education: list[dict]) -> list[str]:
     return errors
 
 
+def _normalize_skills(skills: list[str]) -> list[str]:
+    """Split combined entries (commas, semicolons, newlines) into separate skills."""
+    import re
+
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in skills:
+        for part in re.split(r"[,;|\n]+", item or ""):
+            s = re.sub(r"^[\s•\-*]+", "", part.strip())
+            if not s:
+                continue
+            key = s.lower()
+            if key not in seen:
+                seen.add(key)
+                out.append(s)
+    return out
+
+
 def validate_skills_step(skills: list[str], *, for_generate: bool = False) -> list[str]:
-    if for_generate and len([s for s in skills if s.strip()]) < 3:
-        return ["Add at least 3 skills before generating"]
+    normalized = _normalize_skills(skills)
+    if for_generate and len(normalized) < 3:
+        return ["Add at least 3 skills before generating (use commas or new lines between each)"]
     return []
 
 

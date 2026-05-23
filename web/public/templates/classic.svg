@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120">
+  <rect width="200" height="120" fill="#fff"/>
+  <text x="100" y="22" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">NAME</text>
+  <text x="100" y="34" text-anchor="middle" font-family="Arial" font-size="6">email | phone</text>
+  <line x1="10" y1="48" x2="190" y2="48" stroke="#333"/>
+  <text x="10" y="60" font-family="Arial" font-size="7" font-weight="bold">SUMMARY</text>
+  <text x="10" y="78" font-family="Arial" font-size="7" font-weight="bold">EXPERIENCE</text>
+</svg>

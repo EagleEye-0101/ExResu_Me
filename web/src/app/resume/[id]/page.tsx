@@ -7,6 +7,8 @@ import { ATSReportPanel } from "@/components/ATSReport";
 import { KeywordHeatmap } from "@/components/KeywordHeatmap";
 import { MangaButton } from "@/components/MangaButton";
 import { ResumeEditor } from "@/components/ResumeEditor";
+import { ResumePreview } from "@/components/ResumePreview";
+import { TemplatePicker } from "@/components/TemplatePicker";
 import { api, ATSReport, ResumeData } from "@/lib/api";
 
 type Tab = "edit" | "preview" | "score" | "keywords" | "cover" | "diff" | "interview";
@@ -44,8 +46,16 @@ export default function ResumePage() {
   const [dirty, setDirty] = useState(false);
   const [diff, setDiff] = useState<{ previous: ResumeData | null; current: ResumeData | null } | null>(null);
   const [questions, setQuestions] = useState<{ question: string; tip: string }[]>([]);
+  const [loadError, setLoadError] = useState("");
+  const [templateId, setTemplateId] = useState("professional");
 
   const load = useCallback(() => {
+    if (!Number.isFinite(id) || id <= 0) {
+      setLoadError("Invalid resume ID");
+      setLoading(false);
+      return;
+    }
+    setLoadError("");
     api
       .getResume(id)
       .then(async (data) => {
@@ -58,6 +68,7 @@ export default function ResumePage() {
         setResume(r);
         setReport(data.ats_report ?? null);
         setProvider(data.provider || "ollama");
+        setTemplateId(data.template_id || "professional");
         setDirty(false);
         const cl = await api.getCoverLetter(id).catch(() => ({ cover_letter: "" }));
         setCoverLetter(cl.cover_letter || data.cover_letter || "");
@@ -66,7 +77,7 @@ export default function ResumePage() {
           setDiff(d);
         }
       })
-      .catch(console.error)
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "Failed to load resume"))
       .finally(() => setLoading(false));
   }, [id, router]);
 
@@ -122,7 +133,7 @@ export default function ResumePage() {
     }
     setActionLoading(format);
     try {
-      await api.exportResume(id, format);
+      await api.exportResume(id, format, templateId);
       window.open(api.downloadUrl(id, format), "_blank");
     } catch (e) {
       alert(e instanceof Error ? e.message : "Export failed");
@@ -167,7 +178,16 @@ export default function ResumePage() {
   };
 
   if (loading) return <div className="speech-bubble">Loading...</div>;
-  if (!resume || !report) return <p className="font-bold text-manga-danger">Resume not found</p>;
+  if (loadError || !resume || !report) {
+    return (
+      <div className="speech-bubble space-y-3">
+        <p className="font-bold text-manga-danger">{loadError || "Resume not found"}</p>
+        <MangaButton href="/" variant="ghost">
+          ← Home
+        </MangaButton>
+      </div>
+    );
+  }
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "edit", label: "Edit" },
@@ -197,8 +217,11 @@ export default function ResumePage() {
           <MangaButton variant="teal" onClick={optimize} disabled={!!actionLoading}>
             Re-optimize
           </MangaButton>
+          <MangaButton variant="ghost" onClick={() => exportFmt("pdf")} disabled={!!actionLoading}>
+            {actionLoading === "pdf" ? "…" : "PDF"}
+          </MangaButton>
           <MangaButton variant="ghost" onClick={() => exportFmt("docx")} disabled={!!actionLoading}>
-            DOCX
+            {actionLoading === "docx" ? "…" : "DOCX"}
           </MangaButton>
           <MangaButton variant="ghost" onClick={cloneVersion}>
             Clone
@@ -230,10 +253,30 @@ export default function ResumePage() {
         </div>
       )}
       {tab === "preview" && (
-        <div className="manga-panel">
-          <pre className="whitespace-pre-wrap rounded-xl border-2 border-manga-border bg-white p-4 font-mono text-sm">
-            {formatResumeText(resume)}
-          </pre>
+        <div className="manga-panel space-y-4">
+          <div>
+            <p className="mb-2 text-sm font-bold text-manga-muted">Layout template</p>
+            <TemplatePicker
+              value={templateId}
+              onChange={async (tid) => {
+                setTemplateId(tid);
+                await api.setResumeTemplate(id, tid).catch(() => {});
+              }}
+            />
+          </div>
+          <ResumePreview resumeId={id} templateId={templateId} />
+          <div className="flex flex-wrap gap-2 pt-2">
+            <MangaButton
+              variant="primary"
+              onClick={() => exportFmt("pdf")}
+              disabled={!!actionLoading}
+            >
+              Download PDF
+            </MangaButton>
+            <MangaButton variant="ghost" onClick={() => exportFmt("docx")} disabled={!!actionLoading}>
+              Download DOCX
+            </MangaButton>
+          </div>
         </div>
       )}
       {tab === "score" && <ATSReportPanel report={report} />}
@@ -247,7 +290,12 @@ export default function ResumePage() {
           <MangaButton variant="primary" burst onClick={genCover} disabled={!!actionLoading}>
             Generate cover letter
           </MangaButton>
-          <textarea className="input min-h-[300px]" value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} readOnly={!coverLetter} />
+          <textarea
+            className="input min-h-[300px]"
+            value={coverLetter}
+            onChange={(e) => setCoverLetter(e.target.value)}
+            placeholder="Generate a cover letter, then edit it here before copying."
+          />
         </div>
       )}
       {tab === "diff" && (

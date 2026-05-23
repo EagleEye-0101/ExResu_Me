@@ -58,6 +58,8 @@ def _migrate_columns(engine):
         alters.append("ALTER TABLE resumes ADD COLUMN previous_resume_json TEXT DEFAULT ''")
     if "cover_letter" not in cols:
         alters.append("ALTER TABLE resumes ADD COLUMN cover_letter TEXT DEFAULT ''")
+    if "template_id" not in cols:
+        alters.append("ALTER TABLE resumes ADD COLUMN template_id VARCHAR(50) DEFAULT 'professional'")
     if "profiles" in insp.get_table_names():
         pcols = {c["name"] for c in insp.get_columns("profiles")}
         if "phone_country_code" not in pcols:

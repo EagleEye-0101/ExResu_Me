@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-3-5-haiku-20241022"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-3-flash-preview"
     openrouter_api_key: str = ""
     openrouter_model: str = "openai/gpt-4o-mini"
     database_url: str = "sqlite:///./data/resume_builder.db"

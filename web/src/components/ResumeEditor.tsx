@@ -2,6 +2,7 @@
 
 import { FormField, TextInput } from "@/components/FormField";
 import { PhoneInput } from "@/components/PhoneInput";
+import { SkillsInput } from "@/components/SkillsInput";
 import { EndDateInput } from "@/components/EndDateInput";
 import { MonthInput } from "@/components/FormField";
 import { ResumeData, ExperienceInput, EducationInput } from "@/lib/api";
@@ -43,19 +44,24 @@ export function ResumeEditor({
         <FormField label="Email" required>
           <TextInput value={resume.email} onChange={(v) => patch({ email: v })} type="email" />
         </FormField>
-        <FormField label="Phone" required>
-          <PhoneInput
-            countryCode={resume.phone_country_code || "+1"}
-            phone={resume.phone}
-            onCountryChange={(v) => patch({ phone_country_code: v })}
-            onPhoneChange={(v) => patch({ phone: v })}
-          />
-        </FormField>
+        <div className="sm:col-span-2">
+          <FormField label="Phone" required>
+            <PhoneInput
+              countryCode={resume.phone_country_code || "+1"}
+              phone={resume.phone}
+              onCountryChange={(v) => patch({ phone_country_code: v })}
+              onPhoneChange={(v) => patch({ phone: v })}
+            />
+          </FormField>
+        </div>
         <FormField label="Location">
           <TextInput value={resume.location} onChange={(v) => patch({ location: v })} />
         </FormField>
         <FormField label="LinkedIn">
           <TextInput value={resume.linkedin} onChange={(v) => patch({ linkedin: v })} />
+        </FormField>
+        <FormField label="GitHub">
+          <TextInput value={resume.github || ""} onChange={(v) => patch({ github: v })} />
         </FormField>
       </section>
 
@@ -173,15 +179,106 @@ export function ResumeEditor({
 
       <section>
         <h4 className="font-display mb-3 text-2xl">Skills</h4>
-        <textarea
-          className="input min-h-[80px]"
-          value={resume.skills.join(", ")}
-          onChange={(e) =>
-            patch({
-              skills: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-            })
-          }
-        />
+        <SkillsInput skills={resume.skills} onChange={(skills) => patch({ skills })} minForGenerate={3} />
+        {(resume.skill_groups?.length ?? 0) > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm font-bold text-manga-muted">Skill categories (from template / AI)</p>
+            {resume.skill_groups!.map((g, i) => (
+              <p key={i} className="text-sm">
+                <strong>{g.label}:</strong> {g.skills.join(", ")}
+              </p>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="font-display text-2xl">Projects</h4>
+          <button
+            type="button"
+            className="btn-teal text-sm"
+            onClick={() =>
+              patch({
+                projects: [
+                  ...(resume.projects || []),
+                  { name: "", context: "", start_date: "", end_date: "", bullets: [""] },
+                ],
+              })
+            }
+          >
+            + Project
+          </button>
+        </div>
+        {(resume.projects || []).map((proj, i) => (
+          <div key={i} className="mb-3 rounded-lg border border-manga-border p-3 space-y-2">
+            <TextInput
+              value={proj.name}
+              onChange={(v) => {
+                const projects = [...(resume.projects || [])];
+                projects[i] = { ...proj, name: v };
+                patch({ projects });
+              }}
+              placeholder="Project name"
+            />
+            <textarea
+              className="input text-sm min-h-[60px]"
+              value={proj.bullets.join("\n")}
+              onChange={(e) => {
+                const projects = [...(resume.projects || [])];
+                projects[i] = {
+                  ...proj,
+                  bullets: e.target.value.split("\n").filter(Boolean),
+                };
+                patch({ projects });
+              }}
+              placeholder="One bullet per line"
+            />
+          </div>
+        ))}
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="font-display text-2xl">Activities &amp; Awards</h4>
+          <button
+            type="button"
+            className="btn-teal text-sm"
+            onClick={() =>
+              patch({
+                activities: [...(resume.activities || []), { title: "", bullets: [""] }],
+              })
+            }
+          >
+            + Activity
+          </button>
+        </div>
+        {(resume.activities || []).map((act, i) => (
+          <div key={i} className="mb-3 rounded-lg border border-manga-border p-3 space-y-2">
+            <TextInput
+              value={act.title}
+              onChange={(v) => {
+                const activities = [...(resume.activities || [])];
+                activities[i] = { ...act, title: v };
+                patch({ activities });
+              }}
+              placeholder="Activity title"
+            />
+            <textarea
+              className="input text-sm min-h-[60px]"
+              value={act.bullets.join("\n")}
+              onChange={(e) => {
+                const activities = [...(resume.activities || [])];
+                activities[i] = {
+                  ...act,
+                  bullets: e.target.value.split("\n").filter(Boolean),
+                };
+                patch({ activities });
+              }}
+              placeholder="One bullet per line"
+            />
+          </div>
+        ))}
       </section>
     </div>
   );

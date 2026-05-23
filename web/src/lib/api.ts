@@ -1,23 +1,55 @@
 const API_BASE = "/api";
 
+export const API_OFFLINE_MESSAGE =
+  "Backend API is not running. Start it from the project root: .\\.venv\\Scripts\\python.exe -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000";
+
+function isLikelyOfflineResponse(status: number, detail: unknown, raw: string): boolean {
+  if (status === 502 || status === 503 || status === 504) return true;
+  if (status !== 500) return false;
+  const text = typeof detail === "string" ? detail : raw;
+  return (
+    text.includes("Internal Server Error") ||
+    text.includes("ECONNREFUSED") ||
+    text.includes("socket hang up") ||
+    raw.length < 80
+  );
+}
+
+function parseErrorResponse(status: number, raw: string): Error {
+  let err: { detail?: unknown; message?: string } = { detail: raw || `HTTP ${status}` };
+  try {
+    err = JSON.parse(raw);
+  } catch {
+    err = { detail: raw || `HTTP ${status}` };
+  }
+  const detail = err.detail;
+  if (isLikelyOfflineResponse(status, detail, raw)) {
+    return new Error(API_OFFLINE_MESSAGE);
+  }
+  if (Array.isArray(detail)) return new Error(detail.join("; "));
+  if (typeof detail === "object" && detail && "errors" in detail) {
+    const d = detail as { errors?: string[]; detail?: string };
+    return new Error(d.errors?.join("; ") || d.detail || "Validation failed");
+  }
+  return new Error(typeof detail === "string" ? detail : err.message || `HTTP ${status}`);
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    });
+  } catch {
+    throw new Error(API_OFFLINE_MESSAGE);
+  }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    const detail = err.detail;
-    if (Array.isArray(detail)) throw new Error(detail.join("; "));
-    if (typeof detail === "object" && detail?.errors) {
-      throw new Error((detail.errors as string[]).join("; ") || detail.detail || "Validation failed");
-    }
-    throw new Error(
-      typeof detail === "string" ? detail : err.message || `HTTP ${res.status}`
-    );
+    const raw = await res.text();
+    throw parseErrorResponse(res.status, raw);
   }
   return res.json();
 }
@@ -64,9 +96,35 @@ export interface ResumeListItem {
   status: "draft" | "finished";
   ats_score: number;
   provider: string;
+  template_id?: string;
   wizard_step: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface TemplateMeta {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail: string;
+}
+
+export interface SkillGroup {
+  label: string;
+  skills: string[];
+}
+
+export interface Project {
+  name: string;
+  context?: string;
+  start_date?: string;
+  end_date?: string;
+  bullets: string[];
+}
+
+export interface Activity {
+  title: string;
+  bullets: string[];
 }
 
 export interface ResumeStats {
@@ -110,16 +168,32 @@ export interface ResumeData {
   phone_country_code?: string;
   location: string;
   linkedin: string;
+  github?: string;
   headline: string;
   summary: string;
   experience: ExperienceInput[];
   education: EducationInput[];
   skills: string[];
+  skill_groups?: SkillGroup[];
+  projects?: Project[];
+  activities?: Activity[];
   certifications: { name: string; issuer?: string; date?: string }[];
+}
+
+export interface AtsCheckResult {
+  resume_summary: {
+    full_name: string;
+    email: string;
+    experience_count: number;
+    education_count: number;
+    skills_count: number;
+  };
+  ats_report: ATSReport;
 }
 
 export const api = {
   health: () => request<{ status: string }>("/health"),
+  listTemplates: () => request<TemplateMeta[]>("/templates"),
   providers: () => request<{ id: string; name: string; requires_key: boolean }[]>("/providers"),
   testProvider: (provider: string, model?: string) =>
     request<{ success: boolean; error?: string }>("/providers/test", {
@@ -160,7 +234,17 @@ export const api = {
       cover_letter?: string;
       parent_id?: number | null;
       has_diff?: boolean;
+      template_id?: string;
     }>(`/resumes/${id}`),
+  previewUrl: (id: number, template?: string) => {
+    const q = template ? `?template=${encodeURIComponent(template)}` : "";
+    return `${API_BASE}/resumes/${id}/preview${q}`;
+  },
+  setResumeTemplate: (id: number, templateId: string) =>
+    request<{ id: number; template_id: string }>(`/resumes/${id}/template`, {
+      method: "PATCH",
+      body: JSON.stringify({ template_id: templateId }),
+    }),
   getDraft: (id: number) => request<Record<string, unknown>>(`/resumes/draft/${id}`),
   saveDraft: (data: {
     profile: Omit<Profile, "id">;
@@ -184,7 +268,8 @@ export const api = {
     profileId: number,
     jobDescription: string,
     provider?: string,
-    draftId?: number
+    draftId?: number,
+    templateId?: string
   ) =>
     request<{ id: number; resume: ResumeData; ats_report: ATSReport }>("/resumes/generate", {
       method: "POST",
@@ -193,6 +278,7 @@ export const api = {
         job_description: jobDescription,
         provider,
         draft_id: draftId,
+        template_id: templateId || "professional",
       }),
     }),
   optimize: (resumeId: number, provider?: string) =>
@@ -205,10 +291,13 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ resume }),
     }),
-  exportResume: (id: number, format: string) =>
+  exportResume: (id: number, format: string, templateId?: string) =>
     request<{ filename: string; path: string; ats_score: number; warnings: string[] }>(
       `/resumes/${id}/export`,
-      { method: "POST", body: JSON.stringify({ format }) }
+      {
+        method: "POST",
+        body: JSON.stringify({ format, template_id: templateId }),
+      }
     ),
   downloadUrl: (id: number, format: string) => `${API_BASE}/resumes/${id}/download?format=${format}`,
   keywordHeatmap: (id: number) =>
@@ -222,16 +311,20 @@ export const api = {
     }),
   getDiff: (id: number) =>
     request<{ previous: ResumeData | null; current: ResumeData | null }>(`/resumes/${id}/diff`),
-  generateCoverLetter: (id: number, provider?: string) =>
-    request<{ cover_letter: string }>(`/resumes/${id}/cover-letter?provider=${provider || ""}`, {
+  generateCoverLetter: (id: number, provider?: string) => {
+    const q = provider ? `?provider=${encodeURIComponent(provider)}` : "";
+    return request<{ cover_letter: string }>(`/resumes/${id}/cover-letter${q}`, {
       method: "POST",
-    }),
+    });
+  },
   getCoverLetter: (id: number) => request<{ cover_letter: string }>(`/resumes/${id}/cover-letter`),
-  interviewPrep: (id: number, provider?: string) =>
-    request<{ questions: { question: string; tip: string }[] }>(
-      `/resumes/${id}/interview-prep?provider=${provider || ""}`,
+  interviewPrep: (id: number, provider?: string) => {
+    const q = provider ? `?provider=${encodeURIComponent(provider)}` : "";
+    return request<{ questions: { question: string; tip: string }[] }>(
+      `/resumes/${id}/interview-prep${q}`,
       { method: "POST" }
-    ),
+    );
+  },
   coachBullet: (bullet: string, role: string, provider?: string) =>
     request<{ question: string; suggestion: string }>("/coach/bullet", {
       method: "POST",
@@ -243,5 +336,38 @@ export const api = {
     const res = await fetch(`${API_BASE}/import/resume`, { method: "POST", body: form });
     if (!res.ok) throw new Error(await res.text());
     return res.json() as Promise<{ profile_id: number; parsed: Record<string, unknown> }>;
+  },
+  atsCheck: async (file: File, jobDescription: string) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("job_description", jobDescription);
+    const res = await fetch(`${API_BASE}/ats/check`, { method: "POST", body: form });
+    if (!res.ok) {
+      const raw = await res.text();
+      throw new Error(raw || "ATS check failed");
+    }
+    return res.json() as Promise<AtsCheckResult>;
+  },
+  interviewPrepUpload: async (opts: {
+    file?: File;
+    resumeId?: number;
+    jobDescription: string;
+    provider?: string;
+  }) => {
+    const form = new FormData();
+    form.append("job_description", opts.jobDescription);
+    if (opts.provider) form.append("provider", opts.provider);
+    if (opts.resumeId) form.append("resume_id", String(opts.resumeId));
+    if (opts.file) form.append("file", opts.file);
+    const res = await fetch(`${API_BASE}/interview/prep`, { method: "POST", body: form });
+    if (!res.ok) {
+      const raw = await res.text();
+      throw parseErrorResponse(res.status, raw);
+    }
+    return res.json() as Promise<{
+      questions: { question: string; tip: string }[];
+      resume_id: number | null;
+      candidate_name: string;
+    }>;
   },
 };

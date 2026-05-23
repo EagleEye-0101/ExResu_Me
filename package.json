@@ -1,0 +1,16 @@
+{
+  "name": "exresu-me",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ExResu_Me — ATS resume builder (Python API + Next.js web)",
+  "scripts": {
+    "install:web": "npm install --prefix web",
+    "dev": "npm run dev --prefix web",
+    "api": ".venv\\Scripts\\python.exe -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000",
+    "api:clean": "powershell -ExecutionPolicy Bypass -File scripts/restart-api.ps1",
+    "build": "npm run build --prefix web",
+    "start": "npm run start --prefix web",
+    "lint": "npm run lint --prefix web",
+    "postinstall": "npm install --prefix web"
+  }
+}

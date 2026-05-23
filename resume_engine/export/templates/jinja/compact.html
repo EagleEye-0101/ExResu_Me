@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ escape(resume.full_name) }}</title>
+  {% include '_base_styles.html' %}
+  <style>
+    body { font-size: 9pt; line-height: 1.25; }
+    h1 { font-size: 14pt; margin-bottom: 4px; }
+    .section-title { margin: 8px 0 4px; font-size: 10pt; }
+    ul { margin: 2px 0 4px; }
+  </style>
+</head>
+<body>
+  <div class="row-between">
+    <h1>{{ escape(resume.full_name) }}</h1>
+    <span class="muted">{{ escape(resume.email) }} · {{ escape(phone_display(resume)) }}</span>
+  </div>
+  {% if resume.summary %}<p>{{ escape(resume.summary) }}</p>{% endif %}
+  {% if resume.experience %}
+  <div class="section-title">Experience</div>
+  {% for exp in resume.experience %}
+  <p><strong>{{ escape(exp.title) }}</strong>, {{ escape(exp.company) }} ({{ escape(exp.start_date) }}–{{ escape(exp.end_date or 'Present') }})</p>
+  <ul>{% for b in exp.bullets[:4] %}<li>{{ escape(b) }}</li>{% endfor %}</ul>
+  {% endfor %}
+  {% endif %}
+  {% if resume.education %}
+  <div class="section-title">Education</div>
+  {% for edu in resume.education %}
+  <p>{{ escape(edu.degree) }}, {{ escape(edu.institution) }}</p>
+  {% endfor %}
+  {% endif %}
+  {% if resume.skills %}
+  <div class="section-title">Skills</div>
+  <p>{{ escape(resume.skills | join(' · ')) }}</p>
+  {% endif %}
+</body>
+</html>

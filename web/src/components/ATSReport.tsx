@@ -14,7 +14,7 @@ export function ATSReportPanel({ report }: { report: ATSReportType }) {
           className="flex h-32 w-32 flex-shrink-0 items-center justify-center rounded-full border-[4px] border-[var(--border)] font-display text-4xl"
           style={{ background: `conic-gradient(${color} ${score}%, var(--accent-3) 0)` }}
         >
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-manga-card text-3xl">
             {score.toFixed(0)}
           </div>
         </div>
@@ -34,7 +34,7 @@ export function ATSReportPanel({ report }: { report: ATSReportType }) {
               <span>{c.name}</span>
               <span>{c.score.toFixed(0)}</span>
             </div>
-            <div className="mt-2 h-3 overflow-hidden rounded-full border-2 border-[var(--border)] bg-white">
+            <div className="mt-2 h-3 overflow-hidden rounded-full border-2 border-manga-border bg-manga-card">
               <div
                 className="h-full bg-[var(--accent)]"
                 style={{ width: `${c.score}%` }}

@@ -7,7 +7,9 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from resume_engine.ai.generator import generate_resume, optimize_resume
+from api.resume_generation import generate_resume_from_profile
+from resume_engine.ai.generator import optimize_resume
+from resume_engine.ai.provider_ids import normalize_provider_id
 from resume_engine.ai.router import list_providers, test_provider
 from resume_engine.ats.scorer import score_resume
 from resume_engine.config import settings
@@ -23,6 +25,7 @@ from resume_engine.validation import (
 )
 from resume_engine.export.docx_export import export_docx
 from resume_engine.export.pdf_export import export_pdf
+from resume_engine.export.templates.registry import list_templates, render_resume_html, resolve_template_id
 from resume_engine.export.txt_export import export_txt
 from resume_engine.schemas.profile import ProfileCreate, ProfileResponse
 from resume_engine.schemas.resume import ResumeData, ResumeGenerateRequest
@@ -64,12 +67,23 @@ def get_session():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    from resume_engine.ai.router import list_providers_ids
+
+    return {
+        "status": "ok",
+        "providers": list_providers_ids(),
+        "resume_parser": "v4-explicit-build",
+    }
 
 
 @app.get("/api/providers")
 def providers():
     return list_providers()
+
+
+@app.get("/api/templates")
+def templates_list():
+    return list_templates()
 
 
 class TestProviderRequest(BaseModel):
@@ -80,7 +94,8 @@ class TestProviderRequest(BaseModel):
 @app.post("/api/providers/test")
 async def providers_test(req: TestProviderRequest, db: Session = Depends(get_session)):
     cfg = get_runtime_config(db)
-    return await test_provider(req.provider, req.model, cfg)
+    provider = normalize_provider_id(req.provider)
+    return await test_provider(provider, req.model, cfg)
 
 
 # --- Settings ---
@@ -108,6 +123,8 @@ def settings_get(db: Session = Depends(get_session)):
 @app.put("/api/settings")
 def settings_put(data: SettingsUpdate, db: Session = Depends(get_session)):
     payload = {k: v for k, v in data.model_dump().items() if v is not None}
+    if payload.get("default_ai_provider"):
+        payload["default_ai_provider"] = normalize_provider_id(payload["default_ai_provider"])
     return update_settings(db, payload)
 
 
@@ -154,6 +171,7 @@ class ResumeListItem(BaseModel):
     status: str
     ats_score: float
     provider: str
+    template_id: str
     wizard_step: int
     created_at: str
     updated_at: str
@@ -179,6 +197,7 @@ def resumes_list(
             status=r.status or "finished",
             ats_score=r.ats_score,
             provider=r.provider or "",
+            template_id=getattr(r, "template_id", None) or "professional",
             wizard_step=r.wizard_step or 0,
             created_at=r.created_at.isoformat() if r.created_at else "",
             updated_at=r.updated_at.isoformat() if r.updated_at else "",
@@ -220,7 +239,38 @@ def resumes_get(resume_id: int, db: Session = Depends(get_session)):
         "cover_letter": row.cover_letter or "",
         "parent_id": row.parent_id,
         "has_diff": bool(row.previous_resume_json),
+        "template_id": getattr(row, "template_id", None) or "professional",
     }
+
+
+@app.get("/api/resumes/{resume_id}/preview")
+def resumes_preview(resume_id: int, template: str | None = None, db: Session = Depends(get_session)):
+    from fastapi.responses import HTMLResponse
+
+    result = crud.get_resume(db, resume_id)
+    if not result:
+        raise HTTPException(404, "Resume not found")
+    row, resume = result
+    if not resume:
+        raise HTTPException(400, "Draft resumes have no preview — generate first")
+    tid = resolve_template_id(template or getattr(row, "template_id", None))
+    html = render_resume_html(resume, tid)
+    return HTMLResponse(content=html)
+
+
+class TemplateUpdateRequest(BaseModel):
+    template_id: str
+
+
+@app.patch("/api/resumes/{resume_id}/template")
+def resumes_set_template(
+    resume_id: int, req: TemplateUpdateRequest, db: Session = Depends(get_session)
+):
+    tid = resolve_template_id(req.template_id)
+    row = crud.update_template_id(db, resume_id, tid)
+    if not row:
+        raise HTTPException(404, "Resume not found")
+    return {"id": row.id, "template_id": row.template_id}
 
 
 class SaveDraftRequest(BaseModel):
@@ -312,6 +362,7 @@ class GenerateRequest(BaseModel):
     provider: str | None = None
     model: str | None = None
     draft_id: int | None = None
+    template_id: str = "professional"
 
 
 @app.post("/api/resumes/generate")
@@ -333,20 +384,33 @@ async def resumes_generate(req: GenerateRequest, db: Session = Depends(get_sessi
 
     cfg = get_runtime_config(db)
     try:
-        resume = await generate_resume(
-            profile, req.job_description, req.provider, req.model, cfg
+        resume = await generate_resume_from_profile(
+            profile,
+            req.job_description,
+            normalize_provider_id(req.provider),
+            req.model,
+            cfg,
         )
     except Exception as e:
-        raise HTTPException(500, f"AI generation failed: {e}") from e
+        msg = str(e)
+        if any(x in msg for x in ("header", "contact_info", "personal_information", "Field required")):
+            msg += (
+                " Stop the API (Ctrl+C), then run: cd D:\\RESUMEPROJECT && npm run api. "
+                "Check http://127.0.0.1:8000/api/health shows resume_parser v4-explicit-build."
+            )
+        raise HTTPException(500, f"AI generation failed: {msg}") from e
 
     if not getattr(resume, "phone_country_code", None):
         resume.phone_country_code = getattr(profile, "phone_country_code", None) or "+1"
 
     report = score_resume(resume, req.job_description)
-    provider = req.provider or cfg.get("default_ai_provider") or settings.default_ai_provider
+    provider = normalize_provider_id(
+        req.provider or cfg.get("default_ai_provider") or settings.default_ai_provider
+    )
 
     from resume_engine.db.models import ResumeRecord
 
+    template_id = resolve_template_id(req.template_id)
     if req.draft_id:
         row = db.query(ResumeRecord).filter(ResumeRecord.id == req.draft_id).first()
         if row:
@@ -355,16 +419,29 @@ async def resumes_generate(req: GenerateRequest, db: Session = Depends(get_sessi
             row.job_description = req.job_description
             row.ats_score = report.composite_score
             row.provider = provider
+            row.template_id = template_id
             row.title = crud._resume_title(resume, profile.full_name, profile.target_role)
             db.commit()
             db.refresh(row)
         else:
             row = crud.save_resume(
-                db, req.profile_id, resume, req.job_description, report.composite_score, provider
+                db,
+                req.profile_id,
+                resume,
+                req.job_description,
+                report.composite_score,
+                provider,
+                template_id=template_id,
             )
     else:
         row = crud.save_resume(
-            db, req.profile_id, resume, req.job_description, report.composite_score, provider
+            db,
+            req.profile_id,
+            resume,
+            req.job_description,
+            report.composite_score,
+            provider,
+            template_id=template_id,
         )
     return {
         "id": row.id,
@@ -412,7 +489,7 @@ async def resumes_optimize(req: OptimizeRequest, db: Session = Depends(get_sessi
             resume,
             row.job_description or "",
             report.missing_keywords,
-            req.provider,
+            normalize_provider_id(req.provider),
             req.model,
             cfg,
         )
@@ -454,6 +531,7 @@ def resumes_update(resume_id: int, req: UpdateResumeRequest, db: Session = Depen
 
 class ExportRequest(BaseModel):
     format: str = "docx"  # docx, pdf, txt
+    template_id: str | None = None
 
 
 @app.post("/api/resumes/{resume_id}/export")
@@ -471,12 +549,13 @@ def resumes_export(resume_id: int, req: ExportRequest, db: Session = Depends(get
     ext = {"docx": "docx", "pdf": "pdf", "txt": "txt"}.get(fmt, "docx")
     out_path = settings.export_path / f"{safe_name}_resume_{resume_id}.{ext}"
 
+    tid = resolve_template_id(req.template_id or getattr(row, "template_id", None))
     if fmt == "pdf":
-        export_pdf(resume, out_path)
+        export_pdf(resume, out_path, tid)
     elif fmt == "txt":
         export_txt(resume, out_path)
     else:
-        export_docx(resume, out_path)
+        export_docx(resume, out_path, tid)
 
     return {
         "path": str(out_path),
@@ -507,13 +586,14 @@ def resumes_download(resume_id: int, format: str = "docx", db: Session = Depends
     ext = {"docx": "docx", "pdf": "pdf", "txt": "txt"}.get(fmt, "docx")
     out_path = settings.export_path / f"{safe_name}_resume_{resume_id}.{ext}"
 
+    tid = resolve_template_id(getattr(row, "template_id", None))
     if not out_path.exists():
         if fmt == "pdf":
-            export_pdf(resume, out_path)
+            export_pdf(resume, out_path, tid)
         elif fmt == "txt":
             export_txt(resume, out_path)
         else:
-            export_docx(resume, out_path)
+            export_docx(resume, out_path, tid)
 
     media = {
         "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

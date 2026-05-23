@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ escape(resume.full_name) }}</title>
+  {% include '_base_styles.html' %}
+</head>
+<body>
+  <h1>{{ escape(resume.full_name) }}</h1>
+  {% set pairs = contact_pairs(resume) %}
+  {% if pairs %}
+  <div class="contact-grid">
+    {% for label, value in pairs %}
+    <div><span class="label">{{ escape(label) }}:</span> {{ escape(value) }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if resume.summary %}
+  <p class="summary">{{ escape(resume.summary) }}</p>
+  {% endif %}
+
+  {% if resume.education %}
+  <div class="section-title">Education</div>
+  {% for edu in resume.education %}
+  <div class="row-between">
+    <strong>{{ escape(edu.institution) }}</strong>
+    <span class="muted">{{ escape(edu.graduation_date) }}</span>
+  </div>
+  <div class="row-between">
+    <span>{{ escape(edu.degree) }}{% if edu.field %} — {{ escape(edu.field) }}{% endif %}</span>
+    <span class="muted">{{ escape(resume.location) }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% set groups = resume.effective_skill_groups() %}
+  {% if groups %}
+  <div class="section-title">Skills</div>
+  {% for g in groups %}
+  <div class="skill-group">
+    <strong>{{ escape(g.label) }}</strong>
+    <span>{{ escape(g.skills | join(', ')) }}</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.experience %}
+  <div class="section-title">Professional Experience</div>
+  {% for exp in resume.experience %}
+  <div class="row-between">
+    <strong>{{ escape(exp.company) }}</strong>
+    <span class="muted">{{ escape(exp.location) }}</span>
+  </div>
+  <div class="row-between">
+    <span>{{ escape(exp.title) }}</span>
+    <span class="muted">{{ escape(exp.start_date) }} – {{ escape(exp.end_date or 'Present') }}</span>
+  </div>
+  <ul>
+    {% for b in exp.bullets %}<li>{{ escape(b) }}</li>{% endfor %}
+  </ul>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.projects %}
+  <div class="section-title">Projects</div>
+  {% for proj in resume.projects %}
+  <div class="row-between">
+    <strong>{{ escape(proj.name) }}</strong>
+    <span class="muted">{{ escape(proj.start_date) }}{% if proj.end_date %} – {{ escape(proj.end_date) }}{% endif %}</span>
+  </div>
+  {% if proj.context %}<p class="muted">{{ escape(proj.context) }}</p>{% endif %}
+  <ul>{% for b in proj.bullets %}<li>{{ escape(b) }}</li>{% endfor %}</ul>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.activities %}
+  <div class="section-title">Activities &amp; Awards</div>
+  {% for act in resume.activities %}
+  <strong>{{ escape(act.title) }}</strong>
+  <ul>{% for b in act.bullets %}<li>{{ escape(b) }}</li>{% endfor %}</ul>
+  {% endfor %}
+  {% endif %}
+
+  {% if resume.certifications %}
+  <div class="section-title">Certifications</div>
+  <ul>
+    {% for c in resume.certifications %}
+    <li>{{ escape(c.name) }}{% if c.issuer %} — {{ escape(c.issuer) }}{% endif %}{% if c.date %} ({{ escape(c.date) }}){% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</body>
+</html>

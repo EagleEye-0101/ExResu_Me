@@ -1,7 +1,8 @@
 import json
 
+from resume_engine.ai.resume_normalize import parse_ai_resume
 from resume_engine.ai.router import get_provider
-from resume_engine.schemas.profile import ProfileResponse
+from resume_engine.schemas.profile import EducationInput, ExperienceInput, ProfileResponse
 from resume_engine.schemas.resume import ResumeData
 
 SYSTEM_PROMPT = """You are an expert resume writer specializing in ATS-optimized resumes.
@@ -10,10 +11,14 @@ Rules:
 - Single-column logical structure. No tables, icons, or graphics.
 - Bullets: Action verb + quantified metric + outcome. No first person (I/my/we).
 - Dates in MM/YYYY format. end_date can be "Present".
-- Summary: 2-3 concise lines, human-readable (not keyword soup).
+- Summary: 2-3 concise lines as a single STRING (not an array).
 - Headline should align with the target job when reasonable.
 - Skills: include relevant JD keywords that match the candidate's real skills.
-- Return valid JSON matching the schema exactly."""
+
+Return JSON with these TOP-LEVEL keys only (no personal_information wrapper):
+full_name, email, phone, phone_country_code, location, linkedin, github, headline, summary (string),
+experience (array), education (array), skills (array of strings),
+skill_groups (array of {label, skills}), projects (array), activities (array), certifications (array)."""
 
 RESUME_JSON_SCHEMA = {
     "type": "object",
@@ -24,7 +29,41 @@ RESUME_JSON_SCHEMA = {
         "phone_country_code": {"type": "string"},
         "location": {"type": "string"},
         "linkedin": {"type": "string"},
+        "github": {"type": "string"},
         "headline": {"type": "string"},
+        "skill_groups": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {"type": "string"},
+                    "skills": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+        "projects": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "context": {"type": "string"},
+                    "start_date": {"type": "string"},
+                    "end_date": {"type": "string"},
+                    "bullets": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+        "activities": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "bullets": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
         "summary": {"type": "string"},
         "experience": {
             "type": "array",
@@ -99,7 +138,9 @@ async def generate_resume(
         {"role": "user", "content": _profile_to_prompt(profile, job_description)},
     ]
     raw = await ai.complete(messages, json_schema=RESUME_JSON_SCHEMA)
-    return ResumeData.model_validate(raw)
+    if not isinstance(raw, dict):
+        raise ValueError("AI returned non-object JSON; try again or switch model.")
+    return parse_ai_resume(raw, profile)
 
 
 async def optimize_resume(
@@ -129,4 +170,27 @@ CURRENT RESUME:
         },
     ]
     raw = await ai.complete(messages, json_schema=RESUME_JSON_SCHEMA)
-    return ResumeData.model_validate(raw)
+    if not isinstance(raw, dict):
+        raise ValueError("AI returned non-object JSON; try again or switch model.")
+    return parse_ai_resume(raw, profile_from_resume(resume))
+
+
+def profile_from_resume(resume: ResumeData) -> ProfileResponse:
+    """Minimal profile for normalize fallbacks during optimize."""
+    return ProfileResponse(
+        id=0,
+        full_name=resume.full_name,
+        email=resume.email,
+        phone=resume.phone,
+        phone_country_code=resume.phone_country_code,
+        location=resume.location,
+        linkedin=resume.linkedin,
+        target_role="",
+        years_experience=0,
+        headline=resume.headline,
+        summary_notes=resume.summary,
+        experience=[ExperienceInput(**e.model_dump()) for e in resume.experience],
+        education=[EducationInput(**e.model_dump()) for e in resume.education],
+        skills=list(resume.skills),
+        certifications=[c.model_dump() for c in resume.certifications],
+    )

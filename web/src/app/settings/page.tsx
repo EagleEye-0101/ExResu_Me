@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FormField, TextInput } from "@/components/FormField";
+import { MangaButton } from "@/components/MangaButton";
 import { api, AppSettings } from "@/lib/api";
 
 const PROVIDER_FIELDS: {
@@ -10,11 +11,18 @@ const PROVIDER_FIELDS: {
   keyField?: keyof AppSettings;
   modelField: keyof AppSettings;
   keySetField?: keyof AppSettings;
+  setupHint?: string;
+  modelPlaceholder?: string;
 }[] = [
+  { id: "ollama", label: "Ollama (Local)", modelField: "ollama_model" },
   {
-    id: "ollama",
-    label: "Ollama (Local)",
-    modelField: "ollama_model",
+    id: "gemini",
+    label: "Google AI Studio (Gemini — free API)",
+    keyField: "gemini_api_key",
+    keySetField: "gemini_api_key_set",
+    modelField: "gemini_model",
+    modelPlaceholder: "gemini-3-flash-preview",
+    setupHint: "Default: Gemini 3 Flash (gemini-3-flash-preview). Fallback: gemini-2.5-flash.",
   },
   {
     id: "openai",
@@ -31,19 +39,27 @@ const PROVIDER_FIELDS: {
     modelField: "anthropic_model",
   },
   {
-    id: "gemini",
-    label: "Google Gemini",
-    keyField: "gemini_api_key",
-    keySetField: "gemini_api_key_set",
-    modelField: "gemini_model",
-  },
-  {
     id: "openrouter",
     label: "OpenRouter",
     keyField: "openrouter_api_key",
     keySetField: "openrouter_api_key_set",
     modelField: "openrouter_model",
   },
+];
+
+const GEMINI_FLASH_MODELS = [
+  { id: "gemini-3-flash-preview", label: "Gemini 3 Flash (recommended)" },
+  { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+  { id: "gemini-flash-latest", label: "Gemini Flash Latest" },
+  { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
+  { id: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite Preview" },
+];
+
+const GEMINI_HIGH_MODELS = [
+  { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro (high — may need billing)" },
+  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro Preview (latest high)" },
+  { id: "gemini-pro-latest", label: "Gemini Pro Latest" },
+  { id: "gemini-3-pro-preview", label: "Gemini 3 Pro Preview (legacy)" },
 ];
 
 export default function SettingsPage() {
@@ -64,7 +80,7 @@ export default function SettingsPage() {
     try {
       const updated = await api.updateSettings(settings);
       setSettings(updated);
-      setMessage("Settings saved! Restart not needed.");
+      setMessage("Settings saved!");
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -88,7 +104,7 @@ export default function SettingsPage() {
     <div className="max-w-2xl space-y-8">
       <div className="speech-bubble">
         <h1 className="font-display text-4xl">Power-Ups</h1>
-        <p className="text-[var(--muted)]">
+        <p className="text-manga-muted">
           API keys are stored locally on your machine (SQLite). Never sent anywhere except the AI provider.
         </p>
       </div>
@@ -111,11 +127,28 @@ export default function SettingsPage() {
         </FormField>
 
         {PROVIDER_FIELDS.map((p) => (
-          <div
-            key={p.id}
-            className="rounded-xl border-2 border-[var(--border)] bg-[var(--accent-3)]/10 p-4 space-y-3"
-          >
+          <div key={p.id} className="provider-card rounded-xl border-2 border-manga-border p-4 space-y-3">
             <h3 className="font-display text-xl">{p.label}</h3>
+            {p.setupHint && (
+              <p className="text-sm text-manga-muted">
+                {p.setupHint.includes("aistudio.google.com") ? (
+                  <>
+                    Get a free API key at{" "}
+                    <a
+                      href="https://aistudio.google.com/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-manga-accent underline"
+                    >
+                      Google AI Studio
+                    </a>{" "}
+                    and paste it below.
+                  </>
+                ) : (
+                  p.setupHint
+                )}
+              </p>
+            )}
             {p.id === "ollama" ? (
               <>
                 <FormField label="Base URL">
@@ -146,29 +179,80 @@ export default function SettingsPage() {
                   <input
                     type="password"
                     className="input"
-                    value=""
                     onChange={(e) =>
                       setSettings((s) => ({ ...s, [p.keyField!]: e.target.value }))
                     }
-                    placeholder={settings[p.keySetField!] ? "•••••••• (saved — type to replace)" : "Paste API key"}
+                    placeholder={
+                      settings[p.keySetField!]
+                        ? "•••••••• (saved — type to replace)"
+                        : "Paste API key"
+                    }
                   />
                 </FormField>
-                <FormField label="Model">
-                  <TextInput
-                    value={String(settings[p.modelField] || "")}
-                    onChange={(v) => setSettings((s) => ({ ...s, [p.modelField]: v }))}
-                  />
-                </FormField>
+                {p.id === "gemini" ? (
+                  <>
+                    <FormField label="Model (Flash — free tier)">
+                      <select
+                        className="input"
+                        value={String(settings.gemini_model || "gemini-3-flash-preview")}
+                        onChange={(e) =>
+                          setSettings((s) => ({ ...s, gemini_model: e.target.value }))
+                        }
+                      >
+                        {GEMINI_FLASH_MODELS.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField
+                      label="Model (High / Pro — reasoning)"
+                      hint="Often 429 on free keys; enable billing in AI Studio for Pro"
+                    >
+                      <select
+                        className="input"
+                        onChange={(e) =>
+                          setSettings((s) => ({ ...s, gemini_model: e.target.value }))
+                        }
+                        value={
+                          GEMINI_HIGH_MODELS.some((m) => m.id === settings.gemini_model)
+                            ? String(settings.gemini_model)
+                            : ""
+                        }
+                      >
+                        <option value="">— use Flash model above —</option>
+                        {GEMINI_HIGH_MODELS.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </>
+                ) : (
+                  <FormField label="Model" hint={p.modelPlaceholder ? `e.g. ${p.modelPlaceholder}` : undefined}>
+                    <TextInput
+                      value={String(settings[p.modelField] || "")}
+                      onChange={(v) => setSettings((s) => ({ ...s, [p.modelField]: v }))}
+                      placeholder={p.modelPlaceholder || ""}
+                    />
+                  </FormField>
+                )}
               </>
             ) : null}
           </div>
         ))}
 
-        <button onClick={save} disabled={saving} className="btn-primary w-full">
+        <MangaButton variant="primary" burst className="w-full" onClick={save} disabled={saving}>
           {saving ? "Saving..." : "Save All Settings"}
-        </button>
+        </MangaButton>
         {message && (
-          <p className={`text-center font-bold ${message.includes("failed") ? "text-[var(--danger)]" : "text-[var(--success)]"}`}>
+          <p
+            className={`text-center font-bold ${
+              message.includes("failed") ? "text-manga-danger" : "text-manga-success"
+            }`}
+          >
             {message}
           </p>
         )}
@@ -187,10 +271,18 @@ export default function SettingsPage() {
             </option>
           ))}
         </select>
-        <button onClick={runTest} className="btn-teal w-full">
-          Test provider
-        </button>
-        {testResult && <p className="text-center font-bold">{testResult}</p>}
+        <MangaButton variant="teal" className="w-full" onClick={runTest}>
+          {testResult === "Testing..." ? "Testing..." : "Test Provider"}
+        </MangaButton>
+        {testResult && testResult !== "Testing..." && (
+          <p
+            className={`text-center font-bold ${
+              testResult.includes("OK") ? "text-manga-success" : "text-manga-danger"
+            }`}
+          >
+            {testResult}
+          </p>
+        )}
       </div>
     </div>
   );

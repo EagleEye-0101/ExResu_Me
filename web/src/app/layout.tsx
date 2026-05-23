@@ -1,31 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeProvider, ThemeToggle } from "@/components/ThemeProvider";
+import { ThemeScript } from "@/components/ThemeScript";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Resume Hero — ATS Builder",
-  description: "Build ATS-optimized resumes with AI",
+  title: "ExResu_Me — ATS Resume Builder",
+  description: "Build ATS-optimized resumes with AI — ExResu_Me",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="text-manga-text antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
+      <body className="antialiased">
         <ThemeProvider>
-          <nav className="sticky top-0 z-50 border-b-[3px] border-manga-border bg-white/95 backdrop-blur-sm">
+          <nav className="site-nav sticky top-0 z-50 backdrop-blur-sm">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-              <Link href="/" className="font-display text-2xl tracking-wide text-manga-accent">
-                RESUME HERO
-              </Link>
+              <BrandLogo />
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                <Link href="/" className="nav-pill bg-white">
+                <Link href="/" className="nav-pill">
                   Home
                 </Link>
-                <Link href="/wizard" className="nav-pill manga-btn-primary !py-1 !text-sm !text-white">
+                <Link href="/wizard" className="nav-pill nav-pill-accent !py-1 !text-sm">
                   + New
                 </Link>
-                <Link href="/settings" className="nav-pill bg-manga-yellow">
+                <Link href="/ats-check" className="nav-pill !py-1 !text-sm">
+                  ATS
+                </Link>
+                <Link href="/interview-prep" className="nav-pill !py-1 !text-sm">
+                  Interview
+                </Link>
+                <Link href="/settings" className="nav-pill">
                   Settings
                 </Link>
                 <ThemeToggle />
