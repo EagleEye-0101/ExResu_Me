@@ -58,13 +58,20 @@ export default function DashboardPage() {
               Your Resume Arsenal
             </h1>
             <p className="mt-2 text-lg text-manga-muted">
-              Build, edit anytime, score for ATS, export when ready.
+              Build, edit anytime, score for ATS, export when ready. Professional LaTeX
+              templates — edit, compile, download PDF.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
-              <MangaButton href="/wizard" variant="primary" burst>
+              <MangaButton href="/latex?demo=1" variant="primary" burst>
+                Try demo resume
+              </MangaButton>
+              <MangaButton href="/latex" variant="teal">
+                Browse LaTeX templates
+              </MangaButton>
+              <MangaButton href="/wizard" variant="ghost">
                 Start New Resume
               </MangaButton>
-              <MangaButton href="/ats-check" variant="teal">
+              <MangaButton href="/ats-check" variant="ghost">
                 ATS Checker
               </MangaButton>
               <MangaButton href="/interview-prep" variant="ghost">
@@ -78,6 +85,27 @@ export default function DashboardPage() {
           >
             POW!
           </div>
+        </div>
+      </section>
+
+      <section className="manga-panel">
+        <p className="mb-3 text-sm font-bold text-manga-muted">LaTeX template previews</p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { id: "jake", name: "Jake" },
+            { id: "alta", name: "Alta" },
+            { id: "classic", name: "Classic" },
+            { id: "compact", name: "Compact" },
+          ].map((t) => (
+            <Link
+              key={t.id}
+              href={`/latex?demo=1&template=${t.id}`}
+              className="manga-panel block text-center transition hover:ring-2 hover:ring-manga-accent"
+            >
+              <p className="font-bold text-manga-text">{t.name}</p>
+              <p className="text-xs text-manga-muted">Open demo & compile</p>
+            </Link>
+          ))}
         </div>
       </section>
 

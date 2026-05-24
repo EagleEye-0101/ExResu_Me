@@ -54,6 +54,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export interface LatexTemplateMeta {
+  id: string;
+  name: string;
+  description: string;
+  engine: string;
+  thumbnail: string;
+  default?: boolean;
+}
+
+export interface CompileLatexResponse {
+  success: boolean;
+  log: string;
+  error?: string | null;
+  pdf_base64?: string | null;
+}
+
 export interface Profile {
   id: number;
   full_name: string;
@@ -347,6 +363,31 @@ export const api = {
       throw new Error(raw || "ATS check failed");
     }
     return res.json() as Promise<AtsCheckResult>;
+  },
+  listLatexTemplates: () =>
+    request<{
+      templates: LatexTemplateMeta[];
+      default_template_id: string;
+      compiler_available: boolean;
+    }>("/latex/templates"),
+  getLatexDemo: (templateId?: string) => {
+    const q = templateId ? `?template=${encodeURIComponent(templateId)}` : "";
+    return request<{ template_id: string; source: string }>(`/latex/demo${q}`);
+  },
+  getLatexFromResume: (resumeId: number, templateId?: string) => {
+    const q = templateId ? `?template=${encodeURIComponent(templateId)}` : "";
+    return request<{ resume_id: number; template_id: string; source: string }>(
+      `/latex/from-resume/${resumeId}${q}`
+    );
+  },
+  compileLatex: (source: string, templateId?: string) =>
+    request<CompileLatexResponse>("/latex/compile", {
+      method: "POST",
+      body: JSON.stringify({ source, template_id: templateId }),
+    }),
+  demoPdfUrl: (templateId?: string) => {
+    const q = templateId ? `?template=${encodeURIComponent(templateId)}` : "";
+    return `${API_BASE}/latex/demo/pdf${q}`;
   },
   interviewPrepUpload: async (opts: {
     file?: File;

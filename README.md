@@ -8,6 +8,7 @@ Build ATS-optimized resumes with AI (Ollama local + cloud APIs). Score against j
 - **Weighted ATS score** (0–100) — keyword coverage, structure, parseability, content quality
 - **AI providers** — Ollama, **Google AI Studio (Gemini, free API)**, OpenAI, Anthropic, OpenRouter
 - **Exports** — DOCX (best for ATS), PDF, plain text
+- **LaTeX Studio** — Overleaf-style editor with 4 professional templates (compile to PDF)
 - **CLI** — generate, score, optimize, export from terminal
 - **Desktop** — Tauri app wrapping the web UI
 
@@ -81,7 +82,30 @@ npm run dev
 
 Open http://localhost:3000
 
-### 6. CLI examples
+Use **Try demo resume** on the homepage or **LaTeX** in the nav to open the editor (`/latex?demo=1`).
+
+### 6. LaTeX compiler (Tectonic)
+
+The LaTeX editor compiles `.tex` to PDF on the API server. Install [Tectonic](https://tectonic-typesetting.github.io/):
+
+**Windows (winget):**
+
+```powershell
+winget install --id Tectonic.Tectonic
+```
+
+Or download a release binary and set in `.env`:
+
+```
+LATEX_COMPILER=tectonic
+TECTONIC_PATH=C:\path\to\tectonic.exe
+```
+
+Verify: `GET http://127.0.0.1:8000/api/health` should show `"latex_compiler_available": true`.
+
+Docker images include Tectonic automatically.
+
+### 7. CLI examples
 
 ```powershell
 resume init --name "Jane Doe" --email jane@email.com --phone "555-0100" --role "Software Engineer"
@@ -91,7 +115,7 @@ resume export --resume-id 1 --format docx
 resume score resume.json --jd .\job_description.txt
 ```
 
-### 6. Desktop app
+### 8. Desktop app
 
 ```powershell
 cd desktop
@@ -113,7 +137,7 @@ Paste the **full job description** for accurate keyword matching. Use **Re-optim
 ## Project structure
 
 ```
-resume_engine/   # Core: ATS, AI, export, DB
+resume_engine/   # Core: ATS, AI, export, LaTeX, DB
 api/             # FastAPI REST
 web/             # Next.js UI
 cli/             # Typer CLI
@@ -131,6 +155,27 @@ docker compose up
 ```
 
 Includes API + Ollama sidecar.
+
+## Troubleshooting
+
+### Web: `Cannot find module './NNN.js'` (Next.js)
+
+This usually means a **stale `.next` cache** after adding dependencies (e.g. the LaTeX Monaco editor). Stop the dev server, then:
+
+```powershell
+cd d:\RESUMEPROJECT\web
+npm run clean
+npm run build
+npm run dev
+```
+
+`npm run clean` only removes `.next` (safe while the dev server is stopped). For a full reset: `npm run clean:full && npm install`.
+
+If it still fails, delete `web/package-lock.json`, run `npm install` again, then `npm run build`.
+
+### LaTeX: compile returns 503
+
+Install [Tectonic](https://tectonic-typesetting.github.io/) and restart the API. Check `GET http://127.0.0.1:8000/api/health` for `"latex_compiler_available": true`.
 
 ## Honest limits
 

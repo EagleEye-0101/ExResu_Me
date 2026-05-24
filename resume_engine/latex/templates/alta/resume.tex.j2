@@ -1,0 +1,73 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=0.55in]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\definecolor{sidebar}{HTML}{0D9488}
+\definecolor{sidebarbg}{HTML}{F0FDFA}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\begin{document}
+\noindent
+\begin{minipage}[t]{0.32\textwidth}
+\colorbox{sidebarbg}{\parbox{\dimexpr0.32\textwidth-2\fboxsep}{
+\vspace{8pt}
+{\color{sidebar}\LARGE\bfseries {{ resume.full_name | tex }}} \\[8pt]
+{\small\color{sidebar}\textbf{Contact}} \\[4pt]
+{\footnotesize
+Email: {{ resume.email | tex }} \\
+Phone: {{ phone | tex }} \\
+{% if resume.location %}Location: {{ resume.location | tex }} \\{% endif %}
+{% if resume.linkedin %}LinkedIn: {{ resume.linkedin | tex }} \\{% endif %}
+{% if resume.github %}GitHub: {{ resume.github | tex }} \\{% endif %}
+}
+\vspace{8pt}
+{\small\color{sidebar}\textbf{Skills}} \\[4pt]
+{\footnotesize
+{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: }} {{ g.skills | join(', ') | tex }} \\[3pt]
+{% endfor %}
+}
+\vspace{8pt}
+{% if resume.certifications %}
+{\small\color{sidebar}\textbf{Certifications}} \\[4pt]
+{\footnotesize
+{% for c in resume.certifications %}• {{ c.name | tex }} \\{% endfor %}
+}
+\vspace{8pt}
+{% endif %}
+}}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.64\textwidth}
+{% if resume.headline %}{\large\bfseries {{ resume.headline | tex }}} \\[6pt]{% endif %}
+{% if resume.summary %}{{ resume.summary | tex }} \\[10pt]{% endif %}
+{% if resume.experience %}
+{\color{sidebar}\textbf{\large Experience}} \\[4pt]
+{% for exp in resume.experience %}
+\textbf{ {{ exp.title | tex }} } \hfill {\small {{ exp.start_date | tex }} -- {{ (exp.end_date or 'Present') | tex }}} \\
+\textit{ {{ exp.company | tex }} } \\
+\begin{itemize}[leftmargin=*, nosep, topsep=2pt]
+{% for b in exp.bullets %}\item {\small {{ b | tex }}}
+{% endfor %}\end{itemize}
+\vspace{4pt}
+{% endfor %}
+{% endif %}
+{% if resume.education %}
+{\color{sidebar}\textbf{\large Education}} \\[4pt]
+{% for edu in resume.education %}
+\textbf{ {{ edu.institution | tex }} } — {{ edu.degree | tex }} ({{ edu.graduation_date | tex }}) \\
+{% endfor %}
+\vspace{6pt}
+{% endif %}
+{% if resume.projects %}
+{\color{sidebar}\textbf{\large Projects}} \\[4pt]
+{% for p in resume.projects %}
+\textbf{ {{ p.name | tex }} } \\
+\begin{itemize}[leftmargin=*, nosep, topsep=1pt]
+{% for b in p.bullets %}\item {\small {{ b | tex }}}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+\end{minipage}
+\end{document}

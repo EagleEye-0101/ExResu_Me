@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     export_dir: str = "./exports"
+    latex_compiler: str = "tectonic"
+    tectonic_path: str = ""
+    latex_compile_timeout: int = 30
+    latex_max_source_bytes: int = 200_000
 
     @property
     def export_path(self) -> Path:

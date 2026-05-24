@@ -25,6 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/" className="nav-pill">
                   Home
                 </Link>
+                <Link href="/latex" className="nav-pill !py-1 !text-sm">
+                  LaTeX
+                </Link>
                 <Link href="/wizard" className="nav-pill nav-pill-accent !py-1 !text-sm">
                   + New
                 </Link>

@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "rimraf .next",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rimraf .next node_modules",
-    "reinstall": "npm run clean && npm install"
+    "clean": "rimraf .next",
+    "clean:full": "rimraf .next node_modules",
+    "reinstall": "npm run clean:full && npm install"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "monaco-editor": "^0.52.2",
     "next": "15.5.18",
     "react": "19.0.0",
     "react-dom": "19.0.0"

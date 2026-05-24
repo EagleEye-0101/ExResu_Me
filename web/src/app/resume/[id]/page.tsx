@@ -276,6 +276,9 @@ export default function ResumePage() {
             <MangaButton variant="ghost" onClick={() => exportFmt("docx")} disabled={!!actionLoading}>
               Download DOCX
             </MangaButton>
+            <MangaButton href={`/latex?resumeId=${id}`} variant="teal">
+              Open in LaTeX editor
+            </MangaButton>
           </div>
         </div>
       )}

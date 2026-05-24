@@ -1,0 +1,70 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{charter}
+\usepackage[T1]{fontenc}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\titleformat{\section}{\bfseries\scshape\large}{}{0em}{}[\hrule]
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\begin{document}
+\begin{center}
+  {\Huge\bfseries {{ resume.full_name | tex }}} \\[6pt]
+  {\normalsize {{ contact_line }}}
+\end{center}
+\vspace{6pt}
+{% if resume.headline %}\begin{center}\textit{ {{ resume.headline | tex }} }\end{center}
+{% endif %}
+{% if resume.summary %}
+\section{Professional Summary}
+{{ resume.summary | tex }}
+{% endif %}
+{% if resume.experience %}
+\section{Professional Experience}
+{% for exp in resume.experience %}
+\noindent\textbf{ {{ exp.company | tex }} } \hfill {{ exp.start_date | tex }} -- {{ (exp.end_date or 'Present') | tex }} \\
+\textit{ {{ exp.title | tex }} }{% if exp.location %} \hfill {{ exp.location | tex }}{% endif %} \\
+\begin{itemize}[leftmargin=1.2em]
+{% for b in exp.bullets %}\item {{ b | tex }}
+{% endfor %}\end{itemize}
+\vspace{4pt}
+{% endfor %}
+{% endif %}
+{% if resume.education %}
+\section{Education}
+{% for edu in resume.education %}
+\textbf{ {{ edu.institution | tex }} } \hfill {{ edu.graduation_date | tex }} \\
+{{ edu.degree | tex }}{% if edu.gpa %}; GPA {{ edu.gpa | tex }}{% endif %} \\
+{% endfor %}
+{% endif %}
+{% if skill_groups %}
+\section{Technical Skills}
+{% for g in skill_groups %}\textbf{ {{ g.label | tex }}:} {{ g.skills | join(', ') | tex }} \\
+{% endfor %}
+{% endif %}
+{% if resume.projects %}
+\section{Selected Projects}
+{% for p in resume.projects %}
+\textbf{ {{ p.name | tex }} }{% if p.context %} ({{ p.context | tex }}){% endif %} \\
+\begin{itemize}[leftmargin=1.2em]
+{% for b in p.bullets %}\item {{ b | tex }}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+{% if resume.certifications %}
+\section{Certifications}
+{% for c in resume.certifications %}• {{ c.name | tex }}{% if c.issuer %}, {{ c.issuer | tex }}{% endif %} \\
+{% endfor %}
+{% endif %}
+{% if resume.activities %}
+\section{Leadership \& Activities}
+{% for a in resume.activities %}
+\textbf{ {{ a.title | tex }} }} \\
+\begin{itemize}[leftmargin=1.2em]
+{% for b in a.bullets %}\item {{ b | tex }}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+\end{document}

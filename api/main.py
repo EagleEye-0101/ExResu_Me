@@ -54,8 +54,10 @@ app.add_middleware(
 )
 
 from api.features_routes import router as features_router  # noqa: E402
+from api.latex_routes import router as latex_router  # noqa: E402
 
 app.include_router(features_router, prefix="/api")
+app.include_router(latex_router, prefix="/api")
 
 
 def get_session():
@@ -68,11 +70,13 @@ def get_session():
 @app.get("/api/health")
 def health():
     from resume_engine.ai.router import list_providers_ids
+    from resume_engine.latex.compiler import is_latex_available
 
     return {
         "status": "ok",
         "providers": list_providers_ids(),
         "resume_parser": "v4-explicit-build",
+        "latex_compiler_available": is_latex_available(),
     }
 
 

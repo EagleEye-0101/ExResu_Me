@@ -1,0 +1,43 @@
+\documentclass[9pt,letterpaper]{article}
+\usepackage[margin=0.45in]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\titleformat{\section}{\bfseries\small}{}{0em}{}
+\titlespacing*{\section}{0pt}{4pt}{2pt}
+\begin{document}
+\noindent{\Large\bfseries {{ resume.full_name | tex }}} \hfill {\footnotesize {{ contact_line }}} \\
+{% if resume.headline %}{\small\bfseries {{ resume.headline | tex }}} \\{% endif %}
+{% if resume.summary %}{\footnotesize {{ resume.summary | tex }}} \\[4pt]{% endif %}
+{% if resume.experience %}
+\section{Experience}
+{% for exp in resume.experience %}
+\textbf{ {{ exp.title | tex }}}, {{ exp.company | tex }} \hfill {\footnotesize {{ exp.start_date | tex }}--{{ (exp.end_date or 'Present') | tex }}} \\
+\begin{itemize}[leftmargin=*, nosep, topsep=0pt, itemsep=0pt, parsep=0pt]
+{% for b in exp.bullets %}\item {\footnotesize {{ b | tex }}}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+{% if resume.education %}
+\section{Education}
+{% for edu in resume.education %}
+\textbf{ {{ edu.institution | tex }} } — {{ edu.degree | tex }} ({{ edu.graduation_date | tex }}) \\
+{% endfor %}
+{% endif %}
+{% if skill_groups %}
+\section{Skills}
+{\footnotesize {% for g in skill_groups %}\textbf{ {{ g.label | tex }}:} {{ g.skills | join(', ') | tex }} \quad {% endfor %}}
+{% endif %}
+{% if resume.projects %}
+\section{Projects}
+{% for p in resume.projects %}
+\textbf{ {{ p.name | tex }}: }} {\footnotesize {% for b in p.bullets %}{{ b | tex }}; {% endfor %}}
+{% endfor %}
+{% endif %}
+{% if resume.certifications %}
+\section{Certs}
+{\footnotesize {% for c in resume.certifications %}{{ c.name | tex }}{% if not loop.last %}, {% endif %}{% endfor %}}
+{% endif %}
+\end{document}

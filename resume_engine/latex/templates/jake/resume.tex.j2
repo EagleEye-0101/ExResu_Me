@@ -1,0 +1,69 @@
+\documentclass[letterpaper,11pt]{article}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\titleformat{\section}{\large\bfseries\uppercase}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{10pt}{6pt}
+\begin{document}
+\begin{center}
+  {\LARGE\bfseries {{ resume.full_name | tex }}} \\[4pt]
+  {\small {{ contact_line }}}
+\end{center}
+\vspace{4pt}
+{% if resume.headline %}
+\textbf{ {{ resume.headline | tex }} } \\
+{% endif %}
+{% if resume.summary %}
+\section{Summary}
+{{ resume.summary | tex }}
+{% endif %}
+{% if resume.experience %}
+\section{Experience}
+{% for exp in resume.experience %}
+\textbf{ {{ exp.title | tex }} } \hfill {{ exp.start_date | tex }} -- {{ (exp.end_date or 'Present') | tex }} \\
+\textit{ {{ exp.company | tex }}{% if exp.location %}, {{ exp.location | tex }}{% endif %} } \\
+\begin{itemize}[leftmargin=*, nosep, topsep=2pt]
+{% for b in exp.bullets %}\item {{ b | tex }}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+{% if resume.education %}
+\section{Education}
+{% for edu in resume.education %}
+\textbf{ {{ edu.institution | tex }} } \hfill {{ edu.graduation_date | tex }} \\
+{{ edu.degree | tex }}{% if edu.field %} — {{ edu.field | tex }}{% endif %}{% if edu.gpa %} (GPA: {{ edu.gpa | tex }}){% endif %} \\
+{% endfor %}
+{% endif %}
+{% if skill_groups %}
+\section{Skills}
+{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: }} {{ g.skills | join(', ') | tex }} \\
+{% endfor %}
+{% endif %}
+{% if resume.projects %}
+\section{Projects}
+{% for p in resume.projects %}
+\textbf{ {{ p.name | tex }} }{% if p.context %} — \textit{ {{ p.context | tex }} }{% endif %} \\
+\begin{itemize}[leftmargin=*, nosep, topsep=2pt]
+{% for b in p.bullets %}\item {{ b | tex }}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+{% if resume.certifications %}
+\section{Certifications}
+{% for c in resume.certifications %}{{ c.name | tex }}{% if c.issuer %} — {{ c.issuer | tex }}{% endif %}{% if c.date %} ({{ c.date | tex }}){% endif %} \\
+{% endfor %}
+{% endif %}
+{% if resume.activities %}
+\section{Activities}
+{% for a in resume.activities %}
+\textbf{ {{ a.title | tex }} }} \\
+\begin{itemize}[leftmargin=*, nosep, topsep=2pt]
+{% for b in a.bullets %}\item {{ b | tex }}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+\end{document}
