@@ -40,7 +40,7 @@
 {% endif %}
 {% if skill_groups %}
 \section{Skills}
-{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: }} {{ g.skills | join(', ') | tex }} \\
+{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: } {{ g.skills | join(', ') | tex }} \\
 {% endfor %}
 {% endif %}
 {% if resume.projects %}
@@ -60,7 +60,7 @@
 {% if resume.activities %}
 \section{Activities}
 {% for a in resume.activities %}
-\textbf{ {{ a.title | tex }} }} \\
+\textbf{ {{ a.title | tex }} } \\
 \begin{itemize}[leftmargin=*, nosep, topsep=2pt]
 {% for b in a.bullets %}\item {{ b | tex }}
 {% endfor %}\end{itemize}

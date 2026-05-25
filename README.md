@@ -88,13 +88,15 @@ Use **Try demo resume** on the homepage or **LaTeX** in the nav to open the edit
 
 The LaTeX editor compiles `.tex` to PDF on the API server. Install [Tectonic](https://tectonic-typesetting.github.io/):
 
-**Windows (winget):**
+**Windows (recommended — project-local):**
 
 ```powershell
-winget install --id Tectonic.Tectonic
+powershell -ExecutionPolicy Bypass -File scripts/install-tectonic.ps1
 ```
 
-Or download a release binary and set in `.env`:
+Then restart the API. The binary is placed in `tools/tectonic/` (auto-detected).
+
+Or install globally from [Tectonic releases](https://github.com/tectonic-typesetting/tectonic/releases), or set in `.env`:
 
 ```
 LATEX_COMPILER=tectonic

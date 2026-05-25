@@ -16,6 +16,9 @@ _FORBIDDEN = re.compile(
     re.IGNORECASE,
 )
 
+# Project-local binary from scripts/install-tectonic.ps1
+_BUNDLED_TECTONIC = Path(__file__).resolve().parents[2] / "tools" / "tectonic" / "tectonic.exe"
+
 
 @dataclass(frozen=True)
 class CompileResult:
@@ -39,6 +42,8 @@ def _resolve_compiler_command() -> list[str] | None:
         found = shutil.which("tectonic")
         if found:
             return [found]
+        if _BUNDLED_TECTONIC.is_file():
+            return [str(_BUNDLED_TECTONIC)]
         return None
     for name in (kind, "pdflatex", "xelatex", "lualatex"):
         found = shutil.which(name)

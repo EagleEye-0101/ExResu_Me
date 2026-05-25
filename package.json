@@ -7,6 +7,7 @@
     "install:web": "npm install --prefix web",
     "dev": "npm run dev --prefix web",
     "api": ".venv\\Scripts\\python.exe -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000",
+    "install:tectonic": "powershell -ExecutionPolicy Bypass -File scripts/install-tectonic.ps1",
     "api:clean": "powershell -ExecutionPolicy Bypass -File scripts/restart-api.ps1",
     "build": "npm run build --prefix web",
     "start": "npm run start --prefix web",

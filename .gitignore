@@ -12,6 +12,7 @@ build/
 .pytest_cache/
 .ruff_cache/
 exports/
+tools/tectonic/
 node_modules/
 web/.next/
 web/out/

@@ -33,7 +33,7 @@
 {% if resume.projects %}
 \section{Projects}
 {% for p in resume.projects %}
-\textbf{ {{ p.name | tex }}: }} {\footnotesize {% for b in p.bullets %}{{ b | tex }}; {% endfor %}}
+\textbf{ {{ p.name | tex }}: } {\footnotesize {% for b in p.bullets %}{{ b | tex }}; {% endfor %}}
 {% endfor %}
 {% endif %}
 {% if resume.certifications %}

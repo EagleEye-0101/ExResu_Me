@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     export_dir: str = "./exports"
     latex_compiler: str = "tectonic"
     tectonic_path: str = ""
-    latex_compile_timeout: int = 30
+    latex_compile_timeout: int = 120
     latex_max_source_bytes: int = 200_000
 
     @property

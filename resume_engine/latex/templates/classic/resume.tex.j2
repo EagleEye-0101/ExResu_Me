@@ -61,7 +61,7 @@
 {% if resume.activities %}
 \section{Leadership \& Activities}
 {% for a in resume.activities %}
-\textbf{ {{ a.title | tex }} }} \\
+\textbf{ {{ a.title | tex }} } \\
 \begin{itemize}[leftmargin=1.2em]
 {% for b in a.bullets %}\item {{ b | tex }}
 {% endfor %}\end{itemize}

@@ -25,7 +25,7 @@ Phone: {{ phone | tex }} \\
 \vspace{8pt}
 {\small\color{sidebar}\textbf{Skills}} \\[4pt]
 {\footnotesize
-{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: }} {{ g.skills | join(', ') | tex }} \\[3pt]
+{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: } {{ g.skills | join(', ') | tex }} \\[3pt]
 {% endfor %}
 }
 \vspace{8pt}
