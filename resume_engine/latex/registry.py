@@ -31,9 +31,30 @@ _LATEX_TEMPLATES: dict[str, LatexTemplateMeta] = {
     "alta": LatexTemplateMeta(
         id="alta",
         name="Alta",
-        description="Modern two-column design with accent sidebar for skills and contact.",
+        description="Two-column layout — contact, skills, and education in a teal sidebar.",
         engine="pdflatex",
         thumbnail="/templates/latex-alta.svg",
+    ),
+    "executive": LatexTemplateMeta(
+        id="executive",
+        name="Executive",
+        description="Navy header band with bold name — corporate and leadership roles.",
+        engine="pdflatex",
+        thumbnail="/templates/latex-executive.svg",
+    ),
+    "minimal": LatexTemplateMeta(
+        id="minimal",
+        name="Minimal",
+        description="Helvetica-style sans serif, light rules — clean tech and startup look.",
+        engine="pdflatex",
+        thumbnail="/templates/latex-minimal.svg",
+    ),
+    "harvard": LatexTemplateMeta(
+        id="harvard",
+        name="Harvard",
+        description="Centered header and small-caps sections — academic and consulting style.",
+        engine="pdflatex",
+        thumbnail="/templates/latex-harvard.svg",
     ),
     "classic": LatexTemplateMeta(
         id="classic",

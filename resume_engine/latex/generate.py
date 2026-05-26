@@ -69,10 +69,19 @@ def render_resume_latex(
         contact_parts.append(resume.linkedin)
     if resume.github:
         contact_parts.append(resume.github)
+  # LaTeX dimensions as Python strings — avoids Jinja interpreting \\t in \\textwidth etc.
+    latex_dims = {
+        "col_left": r"0.30\textwidth",
+        "col_right": r"0.66\textwidth",
+        "sidebar_inner": r"0.92\linewidth",
+        "header_width": r"\linewidth",
+        "summary_width": r"0.92\textwidth",
+    }
     return tpl.render(
         resume=resume,
         escape=_latex_escape,
         phone=phone,
         contact_line=" $|$ ".join(_latex_escape(p) for p in contact_parts if p),
         skill_groups=resume.effective_skill_groups(),
+        **latex_dims,
     )

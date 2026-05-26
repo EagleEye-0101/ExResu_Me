@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ escape(resume.full_name) }}</title>
+  {% include '_base_styles.html' %}
+  <style>
+    .exec-header {
+      background: #1e3a5f;
+      color: #fff;
+      margin: -16px -16px 16px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .exec-header h1 { color: #fff; margin: 0; }
+    .exec-header .muted { color: #cbd5e1; }
+    .section-title { border-bottom-color: #1e3a5f; color: #1e3a5f; }
+  </style>
+</head>
+<body>
+  <div class="exec-header">
+    <h1>{{ escape(resume.full_name) }}</h1>
+    <p class="muted">{{ escape(resume.email) }} · {{ escape(phone_display(resume)) }}{% if resume.location %} · {{ escape(resume.location) }}{% endif %}</p>
+    {% if resume.headline %}<p><em>{{ escape(resume.headline) }}</em></p>{% endif %}
+  </div>
+  {% if resume.summary %}
+  <div class="section-title">Executive Summary</div>
+  <p>{{ escape(resume.summary) }}</p>
+  {% endif %}
+  {% if resume.experience %}
+  <div class="section-title">Professional Experience</div>
+  {% for exp in resume.experience %}
+  <div class="row-between"><strong>{{ escape(exp.title) }}</strong><span class="muted">{{ escape(exp.start_date) }} – {{ escape(exp.end_date or 'Present') }}</span></div>
+  <p class="muted">{{ escape(exp.company) }}{% if exp.location %} · {{ escape(exp.location) }}{% endif %}</p>
+  <ul>{% for b in exp.bullets %}<li>{{ escape(b) }}</li>{% endfor %}</ul>
+  {% endfor %}
+  {% endif %}
+  {% if resume.education %}
+  <div class="section-title">Education</div>
+  {% for edu in resume.education %}
+  <p><strong>{{ escape(edu.institution) }}</strong> — {{ escape(edu.degree) }} ({{ escape(edu.graduation_date) }})</p>
+  {% endfor %}
+  {% endif %}
+  {% set groups = resume.effective_skill_groups() %}
+  {% if groups or resume.skills %}
+  <div class="section-title">Core Competencies</div>
+  {% if groups %}{% for g in groups %}<p><strong>{{ escape(g.label) }}:</strong> {{ escape(g.skills | join(', ')) }}</p>{% endfor %}
+  {% else %}<p>{{ escape(resume.skills | join(', ')) }}</p>{% endif %}
+  {% endif %}
+</body>
+</html>

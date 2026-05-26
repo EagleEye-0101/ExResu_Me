@@ -12,20 +12,30 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_list_latex_templates_has_four():
+def test_list_latex_templates_has_core_set():
     ids = {t["id"] for t in list_latex_templates()}
-    assert ids >= {"jake", "alta", "classic", "compact"}
+    assert ids >= {
+        "jake",
+        "alta",
+        "classic",
+        "compact",
+        "executive",
+        "minimal",
+        "harvard",
+    }
 
 
 def test_render_demo_source_all_templates():
-    for tid in ["jake", "alta", "classic", "compact"]:
+    ids = {t["id"] for t in list_latex_templates()}
+    for tid in ids:
         src = render_resume_latex(DEMO_RESUME, tid)
         assert "\\begin{document}" in src
         assert "Alexandra Chen" in src
 
 
 def test_compile_demo_templates():
-    for tid in ["jake", "alta", "classic", "compact"]:
+    ids = {t["id"] for t in list_latex_templates()}
+    for tid in ids:
         source = render_resume_latex(DEMO_RESUME, tid)
         result = compile_latex(source)
         assert result.success, f"{tid}: {result.error}\n{result.log}"
@@ -34,7 +44,7 @@ def test_compile_demo_templates():
 
 
 def test_resolve_unknown_latex_template():
-    assert resolve_latex_template_id("unknown") == "jake"
+    assert resolve_latex_template_id("unknown") == "compact"
 
 
 def test_compile_rejects_shell_escape():

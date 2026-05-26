@@ -1,0 +1,61 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\definecolor{Muted}{HTML}{6B7280}
+\definecolor{Rule}{HTML}{D1D5DB}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\linespread{1.02}
+\titleformat{\section}{\bfseries\small\color{Muted}}{}{0em}{}[\textcolor{Rule}{\titlerule}]
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\begin{document}
+{\bfseries\fontsize{22}{26}\selectfont {{ resume.full_name | tex }}}\\[4pt]
+{\small\color{Muted} {{ contact_line }}}
+{% if resume.headline %}\\[6pt]{\normalsize {{ resume.headline | tex }}}{% endif %}
+\vspace{10pt}
+{% if resume.summary %}
+\section{Summary}
+{{ resume.summary | tex }}
+{% endif %}
+{% if resume.experience %}
+\section{Experience}
+{% for exp in resume.experience %}
+\textbf{ {{ exp.title | tex }} } \hfill {\small\color{Muted} {{ exp.start_date | tex }} -- {{ (exp.end_date or 'Present') | tex }}} \\
+{\color{Muted} {{ exp.company | tex }}{% if exp.location %} · {{ exp.location | tex }}{% endif %} } \\
+\begin{itemize}[leftmargin=1.1em, nosep, topsep=2pt, itemsep=1pt]
+{% for b in exp.bullets %}\item {\small {{ b | tex }}}
+{% endfor %}\end{itemize}
+\vspace{4pt}
+{% endfor %}
+{% endif %}
+{% if resume.education %}
+\section{Education}
+{% for edu in resume.education %}
+\textbf{ {{ edu.institution | tex }} } \hfill {\small\color{Muted} {{ edu.graduation_date | tex }}} \\
+{{ edu.degree | tex }}{% if edu.field %}, {{ edu.field | tex }}{% endif %} \\
+{% endfor %}
+{% endif %}
+{% if skill_groups %}
+\section{Skills}
+{% for g in skill_groups %}{\small\textbf{ {{ g.label | tex }}:} {{ g.skills | join(' · ') | tex }} }\\{% endfor %}
+{% endif %}
+{% if resume.projects %}
+\section{Projects}
+{% for p in resume.projects %}
+\textbf{ {{ p.name | tex }} }{% if p.context %} — {\color{Muted} {{ p.context | tex }} }{% endif %} \\
+\begin{itemize}[leftmargin=1.1em, nosep, topsep=1pt]
+{% for b in p.bullets %}\item {\small {{ b | tex }}}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+{% if resume.certifications %}
+\section{Certifications}
+{\small {% for c in resume.certifications %}{{ c.name | tex }}{% if not loop.last %} · {% endif %}{% endfor %}}
+{% endif %}
+\end{document}

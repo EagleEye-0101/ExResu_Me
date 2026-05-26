@@ -6,7 +6,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from resume_engine.export.templates import classic, compact, modern, professional
+from resume_engine.export.templates import (
+    classic,
+    compact,
+    executive,
+    minimal_style,
+    modern,
+    professional,
+)
 from resume_engine.schemas.resume import ResumeData
 
 DEFAULT_TEMPLATE_ID = "compact"
@@ -45,6 +52,18 @@ _TEMPLATES: dict[str, TemplateMeta] = {
         description="Tighter spacing for one-page resumes.",
         thumbnail="/templates/compact.svg",
     ),
+    "executive": TemplateMeta(
+        id="executive",
+        name="Executive",
+        description="Navy header band — corporate and leadership roles.",
+        thumbnail="/templates/executive.svg",
+    ),
+    "minimal": TemplateMeta(
+        id="minimal",
+        name="Minimal",
+        description="Light sans-serif layout — clean tech and startup style.",
+        thumbnail="/templates/minimal.svg",
+    ),
 }
 
 _RENDERERS: dict[str, Callable[[ResumeData], str]] = {
@@ -52,6 +71,8 @@ _RENDERERS: dict[str, Callable[[ResumeData], str]] = {
     "classic": classic.render_html,
     "modern": modern.render_html,
     "compact": compact.render_html,
+    "executive": executive.render_html,
+    "minimal": minimal_style.render_html,
 }
 
 
@@ -94,6 +115,10 @@ def export_pdf(resume: ResumeData, output_path: Path, template_id: str | None = 
         return modern.export_pdf(resume, output_path)
     if tid == "compact":
         return compact.export_pdf(resume, output_path)
+    if tid == "executive":
+        return executive.export_pdf(resume, output_path)
+    if tid == "minimal":
+        return minimal_style.export_pdf(resume, output_path)
     return classic.export_pdf(resume, output_path)
 
 
@@ -108,4 +133,8 @@ def export_docx(resume: ResumeData, output_path: Path, template_id: str | None =
         return modern.export_docx(resume, output_path)
     if tid == "compact":
         return compact.export_docx(resume, output_path)
+    if tid == "executive":
+        return executive.export_docx(resume, output_path)
+    if tid == "minimal":
+        return minimal_style.export_docx(resume, output_path)
     return classic.export_docx(resume, output_path)

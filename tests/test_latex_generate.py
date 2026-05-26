@@ -12,7 +12,7 @@ def test_get_demo_source_contains_all_sections():
 
 
 def test_render_resume_latex_all_templates():
-    for tid in ["jake", "alta", "classic", "compact"]:
+    for tid in [t["id"] for t in list_latex_templates()]:
         out = render_resume_latex(DEMO_RESUME, tid)
         assert "\\documentclass" in out
         assert DEMO_RESUME.full_name in out

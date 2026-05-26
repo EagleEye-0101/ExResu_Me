@@ -3,68 +3,100 @@
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{xcolor}
+\usepackage{calc}
 \usepackage[hidelinks]{hyperref}
-\definecolor{sidebar}{HTML}{0D9488}
-\definecolor{sidebarbg}{HTML}{F0FDFA}
+\definecolor{SideAccent}{HTML}{0F766E}
+\definecolor{SideBg}{HTML}{F0FDFA}
+\definecolor{SideTitle}{HTML}{134E4A}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
+\linespread{0.97}
+\titleformat{\section}{\color{SideAccent}\bfseries\normalsize\uppercase}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{8pt}{4pt}
 \begin{document}
 \noindent
-\begin{minipage}[t]{0.32\textwidth}
-\colorbox{sidebarbg}{\parbox{\dimexpr0.32\textwidth-2\fboxsep}{
-\vspace{4pt}
-{\color{sidebar}\Large\bfseries {{ resume.full_name | tex }}} \\[4pt]
-{\small\color{sidebar}\textbf{Contact}} \\[2pt]
-{\footnotesize
-Email: {{ resume.email | tex }} \\
-Phone: {{ phone | tex }} \\
-{% if resume.location %}Location: {{ resume.location | tex }} \\{% endif %}
-{% if resume.linkedin %}LinkedIn: {{ resume.linkedin | tex }} \\{% endif %}
-{% if resume.github %}GitHub: {{ resume.github | tex }} \\{% endif %}
+\begin{minipage}[t]{ {{ col_left }} }
+\vspace{0pt}
+\noindent\colorbox{SideBg}{\begin{minipage}[t]{ {{ sidebar_inner }} }
+\vspace{6pt}
+{\color{SideTitle}\bfseries\Large {{ resume.full_name | tex }}}\\[8pt]
+{\color{SideAccent}\small\bfseries CONTACT}\\[3pt]
+{\footnotesize\color{SideTitle}
+{{ resume.email | tex }}\\[2pt]
+{{ phone | tex }}\\[2pt]
+{% if resume.location %}{{ resume.location | tex }}\\[2pt]{% endif %}
+{% if resume.linkedin %}{{ resume.linkedin | tex }}\\[2pt]{% endif %}
+{% if resume.github %}{{ resume.github | tex }}\\[2pt]{% endif %}
 }
-\vspace{4pt}
-{\small\color{sidebar}\textbf{Skills}} \\[2pt]
-{\footnotesize
-{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: } {{ g.skills | join(', ') | tex }} \\[3pt]
+{% if skill_groups %}
+\vspace{6pt}
+{\color{SideAccent}\small\bfseries SKILLS}\\[3pt]
+{\footnotesize\color{SideTitle}
+{% for g in skill_groups %}
+\textbf{ {{ g.label | tex }}:}\\[1pt]
+{{ g.skills | join(', ') | tex }}\\[4pt]
 {% endfor %}
 }
-\vspace{4pt}
-{% if resume.certifications %}
-{\small\color{sidebar}\textbf{Certifications}} \\[4pt]
-{\footnotesize
-{% for c in resume.certifications %}• {{ c.name | tex }} \\{% endfor %}
-}
-\vspace{4pt}
 {% endif %}
-}}
+{% if resume.education %}
+\vspace{4pt}
+{\color{SideAccent}\small\bfseries EDUCATION}\\[3pt]
+{\footnotesize\color{SideTitle}
+{% for edu in resume.education %}
+\textbf{ {{ edu.institution | tex }} }\\[1pt]
+{{ edu.degree | tex }}{% if edu.field %}, {{ edu.field | tex }}{% endif %}\\[1pt]
+{{ edu.graduation_date | tex }}\\[4pt]
+{% endfor %}
+}
+{% endif %}
+{% if resume.certifications %}
+\vspace{4pt}
+{\color{SideAccent}\small\bfseries CERTS}\\[3pt]
+{\footnotesize\color{SideTitle}
+{% for c in resume.certifications %}
+{{ c.name | tex }}{% if c.date %} ({{ c.date | tex }}){% endif %}\\[2pt]
+{% endfor %}
+}
+{% endif %}
+\vspace{6pt}
+\end{minipage}}
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.64\textwidth}
-{% if resume.headline %}{\large\bfseries {{ resume.headline | tex }}} \\[6pt]{% endif %}
-{% if resume.summary %}{\small {{ resume.summary | tex }}} \\[6pt]{% endif %}
+\begin{minipage}[t]{ {{ col_right }} }
+\vspace{0pt}
+{% if resume.headline %}
+{\large\bfseries\color{SideTitle} {{ resume.headline | tex }}}\\[4pt]
+{% endif %}
+{% if resume.summary %}
+\section{Profile}
+{{ resume.summary | tex }}
+{% endif %}
 {% if resume.experience %}
-{\color{sidebar}\textbf{\large Experience}} \\[4pt]
+\section{Experience}
 {% for exp in resume.experience %}
 \textbf{ {{ exp.title | tex }} } \hfill {\small {{ exp.start_date | tex }} -- {{ (exp.end_date or 'Present') | tex }}} \\
-\textit{ {{ exp.company | tex }} } \\
+\textit{ {{ exp.company | tex }}{% if exp.location %}, {{ exp.location | tex }}{% endif %} } \\
 \begin{itemize}[leftmargin=*, nosep, topsep=0pt, itemsep=0pt]
 {% for b in exp.bullets %}\item {\small {{ b | tex }}}
 {% endfor %}\end{itemize}
+\vspace{2pt}
 {% endfor %}
-{% endif %}
-{% if resume.education %}
-{\color{sidebar}\textbf{\large Education}} \\[4pt]
-{% for edu in resume.education %}
-\textbf{ {{ edu.institution | tex }} } — {{ edu.degree | tex }} ({{ edu.graduation_date | tex }}) \\
-{% endfor %}
-\vspace{6pt}
 {% endif %}
 {% if resume.projects %}
-{\color{sidebar}\textbf{\large Projects}} \\[4pt]
+\section{Projects}
 {% for p in resume.projects %}
-\textbf{ {{ p.name | tex }} } \\
-\begin{itemize}[leftmargin=*, nosep, topsep=1pt]
+\textbf{ {{ p.name | tex }} }{% if p.context %} — \textit{ {{ p.context | tex }} }{% endif %} \\
+\begin{itemize}[leftmargin=*, nosep, topsep=0pt, itemsep=0pt]
 {% for b in p.bullets %}\item {\small {{ b | tex }}}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+{% if resume.activities %}
+\section{Activities}
+{% for a in resume.activities %}
+\textbf{ {{ a.title | tex }} } \\
+\begin{itemize}[leftmargin=*, nosep, topsep=0pt, itemsep=0pt]
+{% for b in a.bullets %}\item {\small {{ b | tex }}}
 {% endfor %}\end{itemize}
 {% endfor %}
 {% endif %}

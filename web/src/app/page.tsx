@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [loading, setLoading] = useState(true);
   const [apiOk, setApiOk] = useState(false);
+  const [latexTemplates, setLatexTemplates] = useState<{ id: string; name: string }[]>([]);
 
   const load = () => {
     Promise.all([
@@ -21,11 +22,14 @@ export default function DashboardPage() {
       api.listProfiles().catch(() => []),
       api.listResumes().catch(() => []),
       api.resumeStats().catch(() => ({ total: 0, drafts: 0, finished: 0 })),
+      api.listLatexTemplates().catch(() => ({ templates: [] })),
     ])
-      .then(([, p, r, s]) => {
+      .then(([, p, r, s, lt]) => {
         setProfiles(p as Profile[]);
         setResumes(r as ResumeListItem[]);
         setStats(s as ResumeStats);
+        const templates = (lt as { templates?: { id: string; name: string }[] }).templates ?? [];
+        setLatexTemplates(templates.map((t) => ({ id: t.id, name: t.name })));
       })
       .finally(() => setLoading(false));
   };
@@ -91,12 +95,15 @@ export default function DashboardPage() {
       <section className="manga-panel">
         <p className="mb-3 text-sm font-bold text-manga-muted">LaTeX template previews</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { id: "jake", name: "Jake" },
-            { id: "alta", name: "Alta" },
-            { id: "classic", name: "Classic" },
-            { id: "compact", name: "Compact" },
-          ].map((t) => (
+          {(latexTemplates.length
+            ? latexTemplates
+            : [
+                { id: "compact", name: "Compact" },
+                { id: "jake", name: "Jake" },
+                { id: "alta", name: "Alta" },
+                { id: "executive", name: "Executive" },
+              ]
+          ).map((t) => (
             <Link
               key={t.id}
               href={`/latex?demo=1&template=${t.id}`}

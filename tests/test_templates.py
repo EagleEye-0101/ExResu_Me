@@ -26,7 +26,7 @@ def _sample() -> ResumeData:
 
 def test_list_templates_has_four():
     ids = {t["id"] for t in list_templates()}
-    assert ids >= {"professional", "classic", "modern", "compact"}
+    assert ids >= {"professional", "classic", "modern", "compact", "executive", "minimal"}
 
 
 def test_render_professional_html():

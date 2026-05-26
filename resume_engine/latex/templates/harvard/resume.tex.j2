@@ -1,0 +1,60 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\titleformat{\section}{\bfseries\scshape}{}{0em}{\centering}[\titlerule]
+\titlespacing*{\section}{0pt}{10pt}{6pt}
+\begin{document}
+\begin{center}
+{\LARGE\bfseries {{ resume.full_name | tex }}}\\[4pt]
+{\normalsize {{ contact_line }}}
+{% if resume.headline %}\\[4pt]{\itshape {{ resume.headline | tex }}}{% endif %}
+\end{center}
+\vspace{6pt}
+{% if resume.summary %}
+\section{Summary}
+\begin{center}
+\parbox{ {{ summary_width }} }{\small {{ resume.summary | tex }}}
+\end{center}
+{% endif %}
+{% if resume.education %}
+\section{Education}
+{% for edu in resume.education %}
+\noindent\textbf{ {{ edu.institution | tex }} } \hfill {{ edu.graduation_date | tex }} \\
+{\small {{ edu.degree | tex }}{% if edu.field %}, {{ edu.field | tex }}{% endif %}{% if edu.gpa %}; GPA {{ edu.gpa | tex }}{% endif %} } \\
+{% endfor %}
+{% endif %}
+{% if resume.experience %}
+\section{Experience}
+{% for exp in resume.experience %}
+\noindent\textbf{ {{ exp.company | tex }} } \hfill {\small {{ exp.start_date | tex }} -- {{ (exp.end_date or 'Present') | tex }}} \\
+\textit{ {{ exp.title | tex }} }{% if exp.location %} \hfill {\small {{ exp.location | tex }} }{% endif %} \\
+\begin{itemize}[leftmargin=1.2em, nosep, topsep=2pt]
+{% for b in exp.bullets %}\item {\small {{ b | tex }}}
+{% endfor %}\end{itemize}
+\vspace{3pt}
+{% endfor %}
+{% endif %}
+{% if skill_groups %}
+\section{Skills \& Interests}
+{% for g in skill_groups %}\textbf{ {{ g.label | tex }}: } {{ g.skills | join(', ') | tex }} \\
+{% endfor %}
+{% endif %}
+{% if resume.projects %}
+\section{Projects}
+{% for p in resume.projects %}
+\textbf{ {{ p.name | tex }} }{% if p.context %} — {{ p.context | tex }}{% endif %} \\
+\begin{itemize}[leftmargin=1.2em, nosep, topsep=1pt]
+{% for b in p.bullets %}\item {\small {{ b | tex }}}
+{% endfor %}\end{itemize}
+{% endfor %}
+{% endif %}
+{% if resume.certifications %}
+\section{Certifications}
+{% for c in resume.certifications %}{{ c.name | tex }}{% if c.issuer %}, {{ c.issuer | tex }}{% endif %}{% if c.date %} ({{ c.date | tex }}){% endif %} \\
+{% endfor %}
+{% endif %}
+\end{document}
