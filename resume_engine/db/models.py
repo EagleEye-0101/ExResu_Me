@@ -47,7 +47,7 @@ class ResumeRecord(Base):
     parent_id = Column(Integer, nullable=True)
     previous_resume_json = Column(Text, default="")
     cover_letter = Column(Text, default="")
-    template_id = Column(String(50), default="professional")
+    template_id = Column(String(50), default="compact")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

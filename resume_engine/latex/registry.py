@@ -8,7 +8,7 @@ from pathlib import Path
 LATEX_ROOT = Path(__file__).resolve().parent
 TEMPLATES_DIR = LATEX_ROOT / "templates"
 
-DEFAULT_LATEX_TEMPLATE_ID = "jake"
+DEFAULT_LATEX_TEMPLATE_ID = "compact"
 
 
 @dataclass(frozen=True)
@@ -24,7 +24,7 @@ _LATEX_TEMPLATES: dict[str, LatexTemplateMeta] = {
     "jake": LatexTemplateMeta(
         id="jake",
         name="Jake",
-        description="Clean one-column layout — popular ATS-friendly style with tight margins.",
+        description="Clean one-column layout — ATS-friendly; best with concise content.",
         engine="pdflatex",
         thumbnail="/templates/latex-jake.svg",
     ),
@@ -45,7 +45,7 @@ _LATEX_TEMPLATES: dict[str, LatexTemplateMeta] = {
     "compact": LatexTemplateMeta(
         id="compact",
         name="Compact",
-        description="Dense one-page layout maximizing content density.",
+        description="Default one-page layout — tight margins and dense sections (recommended).",
         engine="pdflatex",
         thumbnail="/templates/latex-compact.svg",
     ),

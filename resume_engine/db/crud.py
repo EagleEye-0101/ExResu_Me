@@ -108,7 +108,7 @@ def save_resume(
     ats_score: float,
     provider: str,
     title: str = "",
-    template_id: str = "professional",
+    template_id: str = "compact",
 ) -> ResumeRecord:
     profile = get_profile(db, profile_id)
     row = ResumeRecord(
@@ -119,7 +119,7 @@ def save_resume(
         resume_json=resume.model_dump_json(),
         ats_score=ats_score,
         provider=provider,
-        template_id=template_id or "professional",
+        template_id=template_id or "compact",
     )
     db.add(row)
     db.commit()
@@ -290,7 +290,7 @@ def clone_resume(db: Session, resume_id: int, title: str = "") -> ResumeRecord |
         ats_score=row.ats_score,
         provider=row.provider,
         parent_id=row.id,
-        template_id=getattr(row, "template_id", None) or "professional",
+        template_id=getattr(row, "template_id", None) or "compact",
     )
     db.add(new_row)
     db.commit()

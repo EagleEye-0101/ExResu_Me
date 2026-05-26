@@ -1,4 +1,4 @@
-\documentclass[letterpaper,11pt]{article}
+\documentclass[letterpaper,10pt]{article}
 \usepackage[empty]{fullpage}
 \usepackage{titlesec}
 \usepackage{enumitem}
@@ -6,14 +6,15 @@
 \usepackage{tabularx}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
-\titleformat{\section}{\large\bfseries\uppercase}{}{0em}{}[\titlerule]
-\titlespacing*{\section}{0pt}{10pt}{6pt}
+\linespread{0.97}
+\titleformat{\section}{\normalsize\bfseries\uppercase}{}{0em}{}[\titlerule]
+\titlespacing*{\section}{0pt}{6pt}{3pt}
 \begin{document}
 \begin{center}
-  {\LARGE\bfseries {{ resume.full_name | tex }}} \\[4pt]
-  {\small {{ contact_line }}}
+  {\Large\bfseries {{ resume.full_name | tex }}} \\[2pt]
+  {\footnotesize {{ contact_line }}}
 \end{center}
-\vspace{4pt}
+\vspace{2pt}
 {% if resume.headline %}
 \textbf{ {{ resume.headline | tex }} } \\
 {% endif %}
@@ -26,7 +27,7 @@
 {% for exp in resume.experience %}
 \textbf{ {{ exp.title | tex }} } \hfill {{ exp.start_date | tex }} -- {{ (exp.end_date or 'Present') | tex }} \\
 \textit{ {{ exp.company | tex }}{% if exp.location %}, {{ exp.location | tex }}{% endif %} } \\
-\begin{itemize}[leftmargin=*, nosep, topsep=2pt]
+\begin{itemize}[leftmargin=*, nosep, topsep=0pt, itemsep=0pt, parsep=0pt]
 {% for b in exp.bullets %}\item {{ b | tex }}
 {% endfor %}\end{itemize}
 {% endfor %}
@@ -47,7 +48,7 @@
 \section{Projects}
 {% for p in resume.projects %}
 \textbf{ {{ p.name | tex }} }{% if p.context %} — \textit{ {{ p.context | tex }} }{% endif %} \\
-\begin{itemize}[leftmargin=*, nosep, topsep=2pt]
+\begin{itemize}[leftmargin=*, nosep, topsep=0pt, itemsep=0pt, parsep=0pt]
 {% for b in p.bullets %}\item {{ b | tex }}
 {% endfor %}\end{itemize}
 {% endfor %}
@@ -61,7 +62,7 @@
 \section{Activities}
 {% for a in resume.activities %}
 \textbf{ {{ a.title | tex }} } \\
-\begin{itemize}[leftmargin=*, nosep, topsep=2pt]
+\begin{itemize}[leftmargin=*, nosep, topsep=0pt, itemsep=0pt, parsep=0pt]
 {% for b in a.bullets %}\item {{ b | tex }}
 {% endfor %}\end{itemize}
 {% endfor %}

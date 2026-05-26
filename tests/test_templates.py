@@ -37,4 +37,4 @@ def test_render_professional_html():
 
 
 def test_resolve_unknown_defaults():
-    assert resolve_template_id("not-a-template") == "professional"
+        assert resolve_template_id("not-a-template") == "compact"

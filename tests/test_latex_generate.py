@@ -20,4 +20,6 @@ def test_render_resume_latex_all_templates():
 
 def test_list_latex_templates_default():
     templates = list_latex_templates()
-    assert any(t.get("default") for t in templates)
+    defaults = [t for t in templates if t.get("default")]
+    assert len(defaults) == 1
+    assert defaults[0]["id"] == "compact"

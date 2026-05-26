@@ -10,6 +10,7 @@ from resume_engine.schemas.resume import ResumeData
 from resume_engine.utils.phone import format_phone_display
 
 from resume_engine.latex.registry import resolve_latex_template_id
+from resume_engine.resume_one_page import fit_resume_one_page
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -46,7 +47,14 @@ def _env() -> Environment:
     return env
 
 
-def render_resume_latex(resume: ResumeData, template_id: str | None = None) -> str:
+def render_resume_latex(
+    resume: ResumeData,
+    template_id: str | None = None,
+    *,
+    fit_one_page: bool = True,
+) -> str:
+    if fit_one_page:
+        resume = fit_resume_one_page(resume)
     tid = resolve_latex_template_id(template_id)
     template_name = f"{tid}/resume.tex.j2"
     env = _env()

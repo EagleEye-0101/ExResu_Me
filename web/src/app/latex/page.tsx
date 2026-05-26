@@ -13,7 +13,7 @@ function LatexStudioInner() {
   const searchParams = useSearchParams();
   const searchKey = searchParams.toString();
   const demoMode = searchParams.get("demo") === "1";
-  const queryTemplate = searchParams.get("template") || "jake";
+  const queryTemplate = searchParams.get("template") || "compact";
   const resumeIdParam = searchParams.get("resumeId");
   const resumeId = resumeIdParam ? Number(resumeIdParam) : null;
 

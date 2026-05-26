@@ -9,7 +9,7 @@ from typing import Callable
 from resume_engine.export.templates import classic, compact, modern, professional
 from resume_engine.schemas.resume import ResumeData
 
-DEFAULT_TEMPLATE_ID = "professional"
+DEFAULT_TEMPLATE_ID = "compact"
 
 
 @dataclass(frozen=True)
@@ -77,11 +77,16 @@ def get_template(template_id: str | None) -> TemplateMeta:
 
 
 def render_resume_html(resume: ResumeData, template_id: str | None = None) -> str:
+    from resume_engine.resume_one_page import fit_resume_one_page
+
     tid = resolve_template_id(template_id)
-    return _RENDERERS[tid](resume)
+    return _RENDERERS[tid](fit_resume_one_page(resume))
 
 
 def export_pdf(resume: ResumeData, output_path: Path, template_id: str | None = None) -> Path:
+    from resume_engine.resume_one_page import fit_resume_one_page
+
+    resume = fit_resume_one_page(resume)
     tid = resolve_template_id(template_id)
     if tid == "professional":
         return professional.export_pdf(resume, output_path)
@@ -93,6 +98,9 @@ def export_pdf(resume: ResumeData, output_path: Path, template_id: str | None = 
 
 
 def export_docx(resume: ResumeData, output_path: Path, template_id: str | None = None) -> Path:
+    from resume_engine.resume_one_page import fit_resume_one_page
+
+    resume = fit_resume_one_page(resume)
     tid = resolve_template_id(template_id)
     if tid == "professional":
         return professional.export_docx(resume, output_path)
