@@ -56,7 +56,7 @@ function WizardContent() {
   const [draftId, setDraftId] = useState<number | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [provider, setProvider] = useState("ollama");
-  const [templateId, setTemplateId] = useState("professional");
+  const [templateId, setTemplateId] = useState("compact");
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -165,7 +165,7 @@ function WizardContent() {
         draftId ?? undefined,
         templateId
       );
-      router.push(`/resume/${result.id}`);
+      router.push(`/resume/${result.id}?tab=preview`);
     } catch (e) {
       setErrors([e instanceof Error ? e.message : "Generation failed"]);
     } finally {
@@ -178,24 +178,26 @@ function WizardContent() {
       <div className="speech-bubble">
         <h1 className="font-display text-4xl">Resume Quest</h1>
         <p className="text-manga-muted">{STEP_HINTS[step]}</p>
-        <label className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-manga-accent">
-          <input
-            type="file"
-            accept=".txt,.docx,.pdf"
-            className="hidden"
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              try {
-                const r = await api.importResume(f);
-                router.push(`/wizard?profile=${r.profile_id}`);
-              } catch (err) {
-                setErrors([err instanceof Error ? err.message : "Import failed"]);
-              }
-            }}
-          />
-          <span className="manga-btn manga-btn-ghost !text-xs">Import .txt / .docx / .pdf</span>
-        </label>
+        {step === 0 && (
+          <label className="mt-2 inline-block cursor-pointer text-xs font-bold text-manga-accent underline">
+            <input
+              type="file"
+              accept=".txt,.docx,.pdf"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                try {
+                  const r = await api.importResume(f);
+                  router.push(`/wizard?profile=${r.profile_id}`);
+                } catch (err) {
+                  setErrors([err instanceof Error ? err.message : "Import failed"]);
+                }
+              }}
+            />
+            Import existing resume (PDF / DOCX / TXT)
+          </label>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
@@ -249,9 +251,11 @@ function WizardContent() {
           ← Back
         </MangaButton>
         <div className="flex flex-wrap gap-2">
-          <MangaButton variant="secondary" onClick={saveDraft} disabled={savingDraft}>
-            {savingDraft ? "Saving..." : "Save Draft"}
-          </MangaButton>
+          {step < STEPS.length - 1 && (
+            <MangaButton variant="secondary" onClick={saveDraft} disabled={savingDraft}>
+              {savingDraft ? "Saving..." : "Save draft"}
+            </MangaButton>
+          )}
           {step < STEPS.length - 1 ? (
             <MangaButton variant="primary" onClick={next}>
               Next →

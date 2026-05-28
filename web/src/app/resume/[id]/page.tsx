@@ -1,53 +1,50 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { ActionMenu, ActionMenuItem } from "@/components/ActionMenu";
 import { ATSReportPanel } from "@/components/ATSReport";
 import { KeywordHeatmap } from "@/components/KeywordHeatmap";
 import { MangaButton } from "@/components/MangaButton";
 import { ResumeEditor } from "@/components/ResumeEditor";
 import { ResumePreview } from "@/components/ResumePreview";
+import { SegmentedTabs } from "@/components/SegmentedTabs";
 import { TemplatePicker } from "@/components/TemplatePicker";
 import { api, ATSReport, ResumeData } from "@/lib/api";
 
-type Tab = "edit" | "preview" | "score" | "keywords" | "cover" | "diff" | "interview";
+type Tab = "edit" | "preview" | "ats" | "tools";
 
-function Stickers({ score }: { score: number }) {
-  const stickers = [];
-  if (score >= 80) stickers.push({ label: "ATS 80+", emoji: "🔥" });
-  if (score >= 90) stickers.push({ label: "Elite 90+", emoji: "⚡" });
-  if (score >= 95) stickers.push({ label: "Max 95+", emoji: "👑" });
-  if (!stickers.length) return null;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {stickers.map((s) => (
-        <span key={s.label} className="sticker bg-manga-yellow">
-          {s.emoji} {s.label}
-        </span>
-      ))}
-    </div>
-  );
-}
+const TABS: { key: Tab; label: string }[] = [
+  { key: "edit", label: "Edit" },
+  { key: "preview", label: "Preview" },
+  { key: "ats", label: "ATS" },
+  { key: "tools", label: "Tools" },
+];
 
-export default function ResumePage() {
+function ResumePageInner() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = Number(params.id);
+  const initialTab = (searchParams.get("tab") as Tab) || "edit";
   const [title, setTitle] = useState("");
   const [resume, setResume] = useState<ResumeData | null>(null);
   const [report, setReport] = useState<ATSReport | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
   const [provider, setProvider] = useState("ollama");
-  const [tab, setTab] = useState<Tab>("edit");
+  const [tab, setTab] = useState<Tab>(
+    TABS.some((t) => t.key === initialTab) ? initialTab : "edit"
+  );
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState("");
   const [saveMsg, setSaveMsg] = useState("");
   const [dirty, setDirty] = useState(false);
-  const [diff, setDiff] = useState<{ previous: ResumeData | null; current: ResumeData | null } | null>(null);
-  const [questions, setQuestions] = useState<{ question: string; tip: string }[]>([]);
+  const [diff, setDiff] = useState<{ previous: ResumeData | null; current: ResumeData | null } | null>(
+    null
+  );
   const [loadError, setLoadError] = useState("");
-  const [templateId, setTemplateId] = useState("professional");
+  const [templateId, setTemplateId] = useState("compact");
 
   const load = useCallback(() => {
     if (!Number.isFinite(id) || id <= 0) {
@@ -68,7 +65,7 @@ export default function ResumePage() {
         setResume(r);
         setReport(data.ats_report ?? null);
         setProvider(data.provider || "ollama");
-        setTemplateId(data.template_id || "professional");
+        setTemplateId(data.template_id || "compact");
         setDirty(false);
         const cl = await api.getCoverLetter(id).catch(() => ({ cover_letter: "" }));
         setCoverLetter(cl.cover_letter || data.cover_letter || "");
@@ -98,7 +95,7 @@ export default function ResumePage() {
       setResume(result.resume);
       setReport(result.ats_report);
       setDirty(false);
-      setSaveMsg("Saved! ATS score updated.");
+      setSaveMsg("Saved — ATS score updated.");
       setTimeout(() => setSaveMsg(""), 4000);
     } catch (e) {
       setSaveMsg(e instanceof Error ? e.message : "Save failed");
@@ -108,7 +105,7 @@ export default function ResumePage() {
   };
 
   const optimize = async () => {
-    if (dirty && !confirm("Save edits before re-optimize?")) return;
+    if (dirty && !confirm("Save edits before re-optimizing?")) return;
     if (dirty) await saveChanges();
     setActionLoading("optimize");
     try {
@@ -118,7 +115,7 @@ export default function ResumePage() {
       setDirty(false);
       const d = await api.getDiff(id);
       setDiff(d);
-      setTab("diff");
+      setTab("tools");
     } catch (e) {
       alert(e instanceof Error ? e.message : "Optimize failed");
     } finally {
@@ -147,29 +144,11 @@ export default function ResumePage() {
     try {
       const r = await api.generateCoverLetter(id, provider);
       setCoverLetter(r.cover_letter);
-      setTab("cover");
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed");
     } finally {
       setActionLoading("");
     }
-  };
-
-  const loadInterview = async () => {
-    setActionLoading("interview");
-    try {
-      const r = await api.interviewPrep(id, provider);
-      setQuestions(r.questions);
-      setTab("interview");
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
-    } finally {
-      setActionLoading("");
-    }
-  };
-
-  const copyHeadline = () => {
-    if (resume?.headline) navigator.clipboard.writeText(resume.headline);
   };
 
   const cloneVersion = async () => {
@@ -177,7 +156,7 @@ export default function ResumePage() {
     router.push(`/resume/${r.id}`);
   };
 
-  if (loading) return <div className="speech-bubble">Loading...</div>;
+  if (loading) return <div className="speech-bubble">Loading…</div>;
   if (loadError || !resume || !report) {
     return (
       <div className="speech-bubble space-y-3">
@@ -189,74 +168,84 @@ export default function ResumePage() {
     );
   }
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "edit", label: "Edit" },
-    { key: "preview", label: "Preview" },
-    { key: "score", label: "ATS" },
-    { key: "keywords", label: "Keywords" },
-    { key: "cover", label: "Cover letter" },
-    { key: "diff", label: "Diff" },
-    { key: "interview", label: "Interview" },
-  ];
+  const score = Math.round(report.composite_score);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+    <div className="space-y-5">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <Link href="/" className="text-sm font-bold text-manga-accent hover:underline">
             ← Home
           </Link>
-          <h1 className="mt-1 font-display text-4xl">{title || resume.full_name}</h1>
-          <Stickers score={report.composite_score} />
-          {dirty && <span className="badge-draft mt-2 ml-2">Unsaved</span>}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h1 className="font-display text-3xl sm:text-4xl">{title || resume.full_name}</h1>
+            <span className="resume-score-chip" title="ATS composite score">
+              ATS {score}
+            </span>
+            {dirty && <span className="badge badge-draft">Unsaved</span>}
+          </div>
         </div>
-        <div className="flex max-w-md flex-wrap justify-end gap-2">
-          <MangaButton variant="primary" onClick={saveChanges} disabled={!!actionLoading || !dirty}>
-            {actionLoading === "save" ? "Saving..." : "Save"}
+
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+          <MangaButton
+            variant="primary"
+            onClick={saveChanges}
+            disabled={!!actionLoading || !dirty}
+            className="!text-sm"
+          >
+            {actionLoading === "save" ? "Saving…" : "Save"}
           </MangaButton>
-          <MangaButton variant="teal" onClick={optimize} disabled={!!actionLoading}>
+          <MangaButton
+            variant="secondary"
+            onClick={optimize}
+            disabled={!!actionLoading}
+            className="!text-sm"
+          >
             Re-optimize
           </MangaButton>
-          <MangaButton variant="ghost" onClick={() => exportFmt("pdf")} disabled={!!actionLoading}>
-            {actionLoading === "pdf" ? "…" : "PDF"}
-          </MangaButton>
-          <MangaButton variant="ghost" onClick={() => exportFmt("docx")} disabled={!!actionLoading}>
-            {actionLoading === "docx" ? "…" : "DOCX"}
-          </MangaButton>
-          <MangaButton variant="ghost" onClick={cloneVersion}>
-            Clone
-          </MangaButton>
-          <MangaButton variant="ghost" onClick={copyHeadline}>
-            Copy headline
-          </MangaButton>
+          <ActionMenu label="Export" variant="teal" disabled={!!actionLoading}>
+            <ActionMenuItem onClick={() => exportFmt("pdf")} disabled={actionLoading === "pdf"}>
+              {actionLoading === "pdf" ? "Exporting PDF…" : "PDF (ReportLab)"}
+            </ActionMenuItem>
+            <ActionMenuItem onClick={() => exportFmt("docx")} disabled={actionLoading === "docx"}>
+              DOCX
+            </ActionMenuItem>
+            <ActionMenuItem href={`/latex?resumeId=${id}&template=${templateId}`}>
+              LaTeX studio (best PDF)
+            </ActionMenuItem>
+          </ActionMenu>
+          <ActionMenu label="More" disabled={!!actionLoading}>
+            <ActionMenuItem onClick={cloneVersion}>Clone resume</ActionMenuItem>
+            <ActionMenuItem
+              onClick={() => resume.headline && navigator.clipboard.writeText(resume.headline)}
+              disabled={!resume.headline}
+            >
+              Copy headline
+            </ActionMenuItem>
+          </ActionMenu>
         </div>
-      </div>
+      </header>
 
-      {saveMsg && <p className="manga-panel bg-manga-teal/20 text-center font-bold">{saveMsg}</p>}
+      {saveMsg && (
+        <p className="rounded-xl border-2 border-manga-border bg-manga-teal/15 px-4 py-2 text-center text-sm font-bold">
+          {saveMsg}
+        </p>
+      )}
 
-      <div className="flex flex-wrap gap-2 border-b-2 border-manga-border pb-2">
-        {tabs.map((t) => (
-          <MangaButton
-            key={t.key}
-            variant={tab === t.key ? "primary" : "ghost"}
-            onClick={() => setTab(t.key)}
-            className="!py-1 !text-xs"
-          >
-            {t.label}
-          </MangaButton>
-        ))}
-      </div>
+      <SegmentedTabs tabs={TABS} active={tab} onChange={setTab} />
 
       {tab === "edit" && (
         <div className="manga-panel">
           <ResumeEditor resume={resume} onChange={handleResumeChange} />
         </div>
       )}
+
       {tab === "preview" && (
         <div className="manga-panel space-y-4">
-          <div>
-            <p className="mb-2 text-sm font-bold text-manga-muted">Layout template</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-bold text-manga-muted">Layout</p>
             <TemplatePicker
+              compact
               value={templateId}
               onChange={async (tid) => {
                 setTemplateId(tid);
@@ -265,86 +254,85 @@ export default function ResumePage() {
             />
           </div>
           <ResumePreview resumeId={id} templateId={templateId} />
-          <div className="flex flex-wrap gap-2 pt-2">
-            <MangaButton
-              variant="primary"
-              onClick={() => exportFmt("pdf")}
-              disabled={!!actionLoading}
-            >
-              Download PDF
-            </MangaButton>
-            <MangaButton variant="ghost" onClick={() => exportFmt("docx")} disabled={!!actionLoading}>
-              Download DOCX
-            </MangaButton>
-            <MangaButton href={`/latex?resumeId=${id}`} variant="teal">
-              Open in LaTeX editor
-            </MangaButton>
+          <p className="text-center text-xs text-manga-muted">
+            For print-quality PDF, use{" "}
+            <Link href={`/latex?resumeId=${id}`} className="font-bold text-manga-accent underline">
+              LaTeX studio
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
+      {tab === "ats" && (
+        <div className="space-y-4">
+          <ATSReportPanel report={report} />
+          <div className="manga-panel">
+            <h3 className="mb-3 font-display text-xl">Keyword heatmap</h3>
+            <KeywordHeatmap resumeId={id} />
           </div>
         </div>
       )}
-      {tab === "score" && <ATSReportPanel report={report} />}
-      {tab === "keywords" && (
-        <div className="manga-panel">
-          <KeywordHeatmap resumeId={id} />
-        </div>
-      )}
-      {tab === "cover" && (
-        <div className="manga-panel space-y-4">
-          <MangaButton variant="primary" burst onClick={genCover} disabled={!!actionLoading}>
-            Generate cover letter
-          </MangaButton>
-          <textarea
-            className="input min-h-[300px]"
-            value={coverLetter}
-            onChange={(e) => setCoverLetter(e.target.value)}
-            placeholder="Generate a cover letter, then edit it here before copying."
-          />
-        </div>
-      )}
-      {tab === "diff" && (
-        <div className="manga-panel space-y-4">
-          {!diff?.previous ? (
-            <p className="text-manga-muted">Run Re-optimize to capture a before/after diff.</p>
-          ) : (
-            <>
-              <h4 className="font-display text-xl">Before summary</h4>
-              <pre className="text-xs opacity-70">{diff.previous.summary}</pre>
-              <h4 className="font-display text-xl">After summary</h4>
-              <pre className="text-xs">{diff.current?.summary}</pre>
-            </>
-          )}
-        </div>
-      )}
-      {tab === "interview" && (
-        <div className="manga-panel space-y-4">
-          <MangaButton variant="teal" onClick={loadInterview} disabled={!!actionLoading}>
-            Generate 10 questions
-          </MangaButton>
-          <ol className="list-decimal space-y-3 pl-5">
-            {questions.map((q, i) => (
-              <li key={i}>
-                <p className="font-bold">{q.question}</p>
-                <p className="text-sm text-manga-muted">{q.tip}</p>
-              </li>
-            ))}
-          </ol>
+
+      {tab === "tools" && (
+        <div className="manga-panel space-y-6">
+          <section className="tools-section space-y-3">
+            <h3 className="font-display text-xl">Cover letter</h3>
+            <p className="text-sm text-manga-muted">Generate from this resume, then edit before sending.</p>
+            <MangaButton variant="primary" onClick={genCover} disabled={!!actionLoading} className="!text-sm">
+              {actionLoading === "cover" ? "Generating…" : "Generate cover letter"}
+            </MangaButton>
+            <textarea
+              className="input min-h-[220px]"
+              value={coverLetter}
+              onChange={(e) => setCoverLetter(e.target.value)}
+              placeholder="Your cover letter appears here…"
+            />
+          </section>
+
+          <section className="tools-section space-y-3">
+            <h3 className="font-display text-xl">Optimization diff</h3>
+            {!diff?.previous ? (
+              <p className="text-sm text-manga-muted">
+                Run <strong>Re-optimize</strong> to compare summary before and after.
+              </p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1 text-xs font-bold uppercase text-manga-muted">Before</p>
+                  <pre className="rounded-lg border-2 border-manga-border bg-black/5 p-3 text-xs dark:bg-white/5">
+                    {diff.previous.summary}
+                  </pre>
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-bold uppercase text-manga-muted">After</p>
+                  <pre className="rounded-lg border-2 border-manga-border bg-black/5 p-3 text-xs dark:bg-white/5">
+                    {diff.current?.summary}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="tools-section space-y-2">
+            <h3 className="font-display text-xl">Interview prep</h3>
+            <p className="text-sm text-manga-muted">
+              Full question generator with job posting — opens in a dedicated flow.
+            </p>
+            <MangaButton href={`/interview-prep?resumeId=${id}`} variant="teal" className="!text-sm">
+              Open interview prep →
+            </MangaButton>
+          </section>
         </div>
       )}
     </div>
   );
 }
 
-function formatResumeText(r: ResumeData): string {
-  const end = (e?: string) => e || "—";
-  const phone = r.phone_country_code ? `${r.phone_country_code} ${r.phone}` : r.phone;
-  const lines = [r.full_name, `${r.email} | ${phone}`, r.headline, "", "SUMMARY", r.summary, "", "EXPERIENCE"];
-  for (const exp of r.experience) {
-    lines.push(`${exp.title} — ${exp.company} (${exp.start_date} – ${end(exp.end_date)})`);
-    exp.bullets.forEach((b) => b.trim() && lines.push(`  • ${b}`));
-    lines.push("");
-  }
-  lines.push("EDUCATION");
-  r.education.forEach((e) => lines.push(`${e.degree} — ${e.institution}`));
-  lines.push("", "SKILLS", r.skills.join(", "));
-  return lines.join("\n");
+export default function ResumePage() {
+  return (
+    <Suspense fallback={<div className="speech-bubble">Loading…</div>}>
+      <ResumePageInner />
+    </Suspense>
+  );
 }

@@ -449,4 +449,122 @@
   [data-theme="dark"] .provider-card {
     background: color-mix(in srgb, var(--accent-3) 12%, var(--card));
   }
+
+  .segmented-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0;
+  }
+
+  .segmented-tab {
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    padding: 0.5rem 1rem;
+    font-family: "Bangers", cursive;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .segmented-tab:hover {
+    color: var(--text);
+  }
+
+  .segmented-tab-active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .action-menu {
+    position: relative;
+    display: inline-block;
+  }
+
+  .action-menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 40;
+    min-width: 11rem;
+    border-radius: 0.75rem;
+    border: 3px solid var(--border);
+    background: var(--card);
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  .action-menu-items {
+    display: flex;
+    flex-direction: column;
+    padding: 0.35rem;
+  }
+
+  .action-menu-item {
+    display: block;
+    width: 100%;
+    border: none;
+    border-radius: 0.5rem;
+    background: transparent;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .action-menu-item:hover:not(:disabled) {
+    background: var(--accent-3);
+  }
+
+  .action-menu-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .template-chip {
+    border-radius: 9999px;
+    border: 2px solid var(--border);
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 2px 2px 0 var(--shadow);
+    transition: background 0.12s;
+  }
+
+  .template-chip-active {
+    background: var(--accent-2);
+    border-color: var(--accent);
+  }
+
+  .resume-score-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    border: 2px solid var(--border);
+    padding: 0.2rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    background: var(--accent-3);
+    color: var(--text);
+  }
+
+  .tools-section {
+    border-top: 2px dashed var(--border);
+    padding-top: 1.25rem;
+  }
+
+  .tools-section:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
 }

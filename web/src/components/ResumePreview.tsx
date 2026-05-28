@@ -33,7 +33,7 @@ export function ResumePreview({
 
   return (
     <div
-      className="resume-preview overflow-auto rounded-xl border-2 border-manga-border bg-white p-6 text-black shadow-inner"
+      className="resume-preview mx-auto max-h-[min(72vh,900px)] max-w-[8.5in] overflow-auto rounded-xl border-2 border-manga-border bg-white p-6 text-black shadow-inner"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

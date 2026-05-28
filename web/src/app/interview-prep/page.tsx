@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { MangaButton } from "@/components/MangaButton";
 import { api, ResumeListItem } from "@/lib/api";
 
 type Mode = "upload" | "saved";
 
-export default function InterviewPrepPage() {
-  const [mode, setMode] = useState<Mode>("upload");
+function InterviewPrepContent() {
+  const searchParams = useSearchParams();
+  const presetResumeId = searchParams.get("resumeId");
+  const [mode, setMode] = useState<Mode>(presetResumeId ? "saved" : "upload");
   const [file, setFile] = useState<File | null>(null);
-  const [resumeId, setResumeId] = useState<number | "">("");
+  const [resumeId, setResumeId] = useState<number | "">(
+    presetResumeId ? Number(presetResumeId) : ""
+  );
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [jobDescription, setJobDescription] = useState("");
   const [provider, setProvider] = useState("ollama");
@@ -156,5 +161,13 @@ export default function InterviewPrepPage() {
         </ol>
       )}
     </div>
+  );
+}
+
+export default function InterviewPrepPage() {
+  return (
+    <Suspense fallback={<p className="text-manga-muted">Loading…</p>}>
+      <InterviewPrepContent />
+    </Suspense>
   );
 }

@@ -7,9 +7,12 @@ import { api, TemplateMeta } from "@/lib/api";
 export function TemplatePicker({
   value,
   onChange,
+  compact = false,
 }: {
   value: string;
   onChange: (templateId: string) => void;
+  /** Horizontal chips — use on preview/export panels */
+  compact?: boolean;
 }) {
   const [templates, setTemplates] = useState<TemplateMeta[]>([]);
 
@@ -20,6 +23,27 @@ export function TemplatePicker({
   if (!templates.length) {
     return (
       <p className="text-sm text-manga-muted">Loading templates…</p>
+    );
+  }
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {templates.map((t) => {
+          const selected = value === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => onChange(t.id)}
+              className={`template-chip ${selected ? "template-chip-active" : ""}`}
+              title={t.description}
+            >
+              {t.name}
+            </button>
+          );
+        })}
+      </div>
     );
   }
 
