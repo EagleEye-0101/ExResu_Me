@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -45,9 +46,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_default_cors = "http://localhost:3000,http://127.0.0.1:3000,tauri://localhost"
+_cors_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", _default_cors).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "tauri://localhost"],
+    allow_origins=_cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

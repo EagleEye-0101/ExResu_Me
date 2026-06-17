@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: exresu-me-api
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: >-
+      pip install -e . &&
+      python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt'); nltk.download('punkt_tab')"
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: DATABASE_URL
+        value: sqlite:///./data/resume_builder.db
+      - key: EXPORT_DIR
+        value: ./exports
+      - key: DEFAULT_AI_PROVIDER
+        value: google_ai_studio
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: http://localhost:3000,http://127.0.0.1:3000
