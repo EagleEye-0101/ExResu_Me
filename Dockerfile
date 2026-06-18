@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Tectonic LaTeX compiler (for /api/latex/*)
-RUN curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz" \
-    | tar -xz -C /usr/local/bin --strip-components=1 tectonic-0.15.0-x86_64-unknown-linux-musl/tectonic \
+RUN curl -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.16.9/tectonic-0.16.9-x86_64-unknown-linux-musl.tar.gz" \
+    | tar -xz -C /usr/local/bin \
     && chmod +x /usr/local/bin/tectonic
 
 COPY pyproject.toml README.md ./
