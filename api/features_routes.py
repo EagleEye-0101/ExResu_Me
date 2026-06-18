@@ -113,11 +113,18 @@ async def _run_interview_prep(
     cfg: dict,
 ) -> list[dict]:
     resolved = normalize_provider_id(provider or cfg.get("default_ai_provider"))
+    raw_provider = (provider or cfg.get("default_ai_provider") or "").strip().lower()
     try:
         return await generate_interview_questions(resume, job_description, resolved, cfg)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     except Exception as e:
+        if resolved == "ollama" or raw_provider == "ollama":
+            raise HTTPException(
+                400,
+                "Ollama is local-only and not available on the live demo. "
+                "Use Google AI Studio (Gemini) and ensure GEMINI_API_KEY is set on the API server.",
+            ) from e
         raise HTTPException(502, f"Interview prep failed: {e}") from e
 
 

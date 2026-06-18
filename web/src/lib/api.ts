@@ -1,12 +1,38 @@
 const API_BASE = "/api";
+const REQUEST_TIMEOUT_MS = 15_000;
 
 export const API_OFFLINE_MESSAGE =
   "Backend API is not running. Start it from the project root: .\\.venv\\Scripts\\python.exe -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000";
 
+export const API_CLOUD_OFFLINE_MESSAGE =
+  "The API is waking up (Render free tier sleeps after ~15 min idle). Wait ~30 seconds and refresh, or try again.";
+
+const GENERIC_GATEWAY_RE =
+  /^(bad gateway|service unavailable|gateway time-?out|internal server error|error 502|error 503|error 504)$/i;
+
+export function isLocalDevHost(): boolean {
+  if (typeof window === "undefined") return true;
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1";
+}
+
+function fetchWithTimeout(path: string, options?: RequestInit): Promise<Response> {
+  const signal =
+    options?.signal ??
+    (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal
+      ? AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      : undefined);
+  return fetch(path, { ...options, signal });
+}
+
 function isLikelyOfflineResponse(status: number, detail: unknown, raw: string): boolean {
-  if (status === 502 || status === 503 || status === 504) return true;
+  const text = (typeof detail === "string" ? detail : raw).trim();
+  if (status === 503 && /latex compiler|tectonic/i.test(text)) return false;
+  if (status === 502 || status === 503 || status === 504) {
+    if (!text || GENERIC_GATEWAY_RE.test(text)) return true;
+    return text.length < 24;
+  }
   if (status !== 500) return false;
-  const text = typeof detail === "string" ? detail : raw;
   return (
     text.includes("Internal Server Error") ||
     text.includes("ECONNREFUSED") ||
@@ -24,7 +50,7 @@ function parseErrorResponse(status: number, raw: string): Error {
   }
   const detail = err.detail;
   if (isLikelyOfflineResponse(status, detail, raw)) {
-    return new Error(API_OFFLINE_MESSAGE);
+    return new Error(isLocalDevHost() ? API_OFFLINE_MESSAGE : API_CLOUD_OFFLINE_MESSAGE);
   }
   if (Array.isArray(detail)) return new Error(detail.join("; "));
   if (typeof detail === "object" && detail && "errors" in detail) {
@@ -37,7 +63,7 @@ function parseErrorResponse(status: number, raw: string): Error {
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    res = await fetchWithTimeout(`${API_BASE}${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -45,7 +71,21 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       },
     });
   } catch {
-    throw new Error(API_OFFLINE_MESSAGE);
+    throw new Error(isLocalDevHost() ? API_OFFLINE_MESSAGE : API_CLOUD_OFFLINE_MESSAGE);
+  }
+  if (!res.ok) {
+    const raw = await res.text();
+    throw parseErrorResponse(res.status, raw);
+  }
+  return res.json();
+}
+
+async function fetchFormData<T>(path: string, form: FormData): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(`${API_BASE}${path}`, { method: "POST", body: form });
+  } catch {
+    throw new Error(isLocalDevHost() ? API_OFFLINE_MESSAGE : API_CLOUD_OFFLINE_MESSAGE);
   }
   if (!res.ok) {
     const raw = await res.text();
@@ -349,20 +389,16 @@ export const api = {
   importResume: async (file: File) => {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(`${API_BASE}/import/resume`, { method: "POST", body: form });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json() as Promise<{ profile_id: number; parsed: Record<string, unknown> }>;
+    return fetchFormData<{ profile_id: number; parsed: Record<string, unknown> }>(
+      "/import/resume",
+      form
+    );
   },
   atsCheck: async (file: File, jobDescription: string) => {
     const form = new FormData();
     form.append("file", file);
     form.append("job_description", jobDescription);
-    const res = await fetch(`${API_BASE}/ats/check`, { method: "POST", body: form });
-    if (!res.ok) {
-      const raw = await res.text();
-      throw new Error(raw || "ATS check failed");
-    }
-    return res.json() as Promise<AtsCheckResult>;
+    return fetchFormData<AtsCheckResult>("/ats/check", form);
   },
   listLatexTemplates: () =>
     request<{
@@ -400,15 +436,10 @@ export const api = {
     if (opts.provider) form.append("provider", opts.provider);
     if (opts.resumeId) form.append("resume_id", String(opts.resumeId));
     if (opts.file) form.append("file", opts.file);
-    const res = await fetch(`${API_BASE}/interview/prep`, { method: "POST", body: form });
-    if (!res.ok) {
-      const raw = await res.text();
-      throw parseErrorResponse(res.status, raw);
-    }
-    return res.json() as Promise<{
+    return fetchFormData<{
       questions: { question: string; tip: string }[];
       resume_id: number | null;
       candidate_name: string;
-    }>;
+    }>("/interview/prep", form);
   },
 };

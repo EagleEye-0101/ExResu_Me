@@ -3,38 +3,55 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MangaButton } from "@/components/MangaButton";
-import { api, Profile, ResumeListItem, ResumeStats } from "@/lib/api";
+import { api, API_CLOUD_OFFLINE_MESSAGE, isLocalDevHost, Profile, ResumeListItem, ResumeStats } from "@/lib/api";
 
 type Tab = "all" | "finished" | "draft";
+
+const FALLBACK_LATEX_TEMPLATES = [
+  { id: "compact", name: "Compact" },
+  { id: "jake", name: "Jake" },
+  { id: "alta", name: "Alta" },
+  { id: "executive", name: "Executive" },
+];
 
 export default function DashboardPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [stats, setStats] = useState<ResumeStats | null>(null);
   const [tab, setTab] = useState<Tab>("all");
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [apiOk, setApiOk] = useState(false);
   const [latexTemplates, setLatexTemplates] = useState<{ id: string; name: string }[]>([]);
+  const [isLocalDev, setIsLocalDev] = useState(true);
 
   const load = () => {
-    Promise.all([
-      api.health().then(() => setApiOk(true)).catch(() => setApiOk(false)),
-      api.listProfiles().catch(() => []),
-      api.listResumes().catch(() => []),
-      api.resumeStats().catch(() => ({ total: 0, drafts: 0, finished: 0 })),
-      api.listLatexTemplates().catch(() => ({ templates: [] })),
+    setDataLoading(true);
+    Promise.allSettled([
+      api.health().then(() => true).catch(() => false),
+      api.listProfiles(),
+      api.listResumes(),
+      api.resumeStats(),
+      api.listLatexTemplates(),
     ])
-      .then(([, p, r, s, lt]) => {
-        setProfiles(p as Profile[]);
-        setResumes(r as ResumeListItem[]);
-        setStats(s as ResumeStats);
-        const templates = (lt as { templates?: { id: string; name: string }[] }).templates ?? [];
-        setLatexTemplates(templates.map((t) => ({ id: t.id, name: t.name })));
+      .then(([healthR, profilesR, resumesR, statsR, latexR]) => {
+        setApiOk(healthR.status === "fulfilled" && healthR.value === true);
+        setProfiles(profilesR.status === "fulfilled" ? profilesR.value : []);
+        setResumes(resumesR.status === "fulfilled" ? resumesR.value : []);
+        setStats(
+          statsR.status === "fulfilled"
+            ? statsR.value
+            : { total: 0, drafts: 0, finished: 0 }
+        );
+        if (latexR.status === "fulfilled") {
+          const templates = latexR.value.templates ?? [];
+          setLatexTemplates(templates.map((t) => ({ id: t.id, name: t.name })));
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => setDataLoading(false));
   };
 
   useEffect(() => {
+    setIsLocalDev(isLocalDevHost());
     load();
   }, []);
 
@@ -44,13 +61,7 @@ export default function DashboardPage() {
     return true;
   });
 
-  if (loading) {
-    return (
-      <div className="speech-bubble text-center font-display text-2xl text-manga-text">
-        Loading your quest log...
-      </div>
-    );
-  }
+  const templateCards = latexTemplates.length ? latexTemplates : FALLBACK_LATEX_TEMPLATES;
 
   return (
     <div className="space-y-8">
@@ -95,15 +106,7 @@ export default function DashboardPage() {
       <section className="manga-panel">
         <p className="mb-3 text-sm font-bold text-manga-muted">LaTeX template previews</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {(latexTemplates.length
-            ? latexTemplates
-            : [
-                { id: "compact", name: "Compact" },
-                { id: "jake", name: "Jake" },
-                { id: "alta", name: "Alta" },
-                { id: "executive", name: "Executive" },
-              ]
-          ).map((t) => (
+          {templateCards.map((t) => (
             <Link
               key={t.id}
               href={`/latex?demo=1&template=${t.id}`}
@@ -116,19 +119,32 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {!apiOk && (
+      {!apiOk && !dataLoading && (
         <div className="manga-panel space-y-2 border-manga-danger bg-manga-danger/15 text-manga-danger">
           <p className="font-bold">Backend API is offline</p>
-          <p className="text-sm text-manga-text">
-            The website (port 3000) needs the Python API (port 8000) for resumes, AI, and settings.
-            Keep <code className="text-xs">npm run dev</code> running, then start the API in a{" "}
-            <strong>second</strong> terminal:
-          </p>
-          <pre className="overflow-x-auto rounded-lg border-2 border-manga-border bg-manga-card p-3 text-xs text-manga-text">
-            {`cd d:\\RESUMEPROJECT
+          {isLocalDev ? (
+            <>
+              <p className="text-sm text-manga-text">
+                The website (port 3000) needs the Python API (port 8000) for resumes, AI, and
+                settings. Keep <code className="text-xs">npm run dev</code> running, then start
+                the API in a <strong>second</strong> terminal:
+              </p>
+              <pre className="overflow-x-auto rounded-lg border-2 border-manga-border bg-manga-card p-3 text-xs text-manga-text">
+                {`cd d:\\RESUMEPROJECT
 .\\.venv\\Scripts\\python.exe -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000`}
-          </pre>
-          <p className="text-xs text-manga-muted">Refresh this page after the API shows “Application startup complete”.</p>
+              </pre>
+              <p className="text-xs text-manga-muted">
+                Refresh this page after the API shows “Application startup complete”.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-manga-text">{API_CLOUD_OFFLINE_MESSAGE}</p>
+              <MangaButton variant="ghost" onClick={load} className="!text-xs">
+                Retry connection
+              </MangaButton>
+            </>
+          )}
         </div>
       )}
 
@@ -153,68 +169,78 @@ export default function DashboardPage() {
         />
       </section>
 
-      {stats && (
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-          <StatCard label="Total" value={stats.total} accent="bg-manga-yellow" />
-          <StatCard label="Finished" value={stats.finished} accent="bg-manga-teal" />
-          <StatCard label="Drafts" value={stats.drafts} accent="bg-manga-accent/30" />
-        </div>
-      )}
+      {dataLoading ? (
+        <p className="speech-bubble text-center text-sm text-manga-muted">
+          Loading your saved resumes…
+        </p>
+      ) : (
+        <>
+          {stats && (
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              <StatCard label="Total" value={stats.total} accent="bg-manga-yellow" />
+              <StatCard label="Finished" value={stats.finished} accent="bg-manga-teal" />
+              <StatCard label="Drafts" value={stats.drafts} accent="bg-manga-accent/30" />
+            </div>
+          )}
 
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-3xl text-manga-text">My Resumes</h2>
-          <div className="flex flex-wrap gap-2">
-            {(["all", "finished", "draft"] as Tab[]).map((t) => (
-              <MangaButton
-                key={t}
-                variant={tab === t ? "primary" : "ghost"}
-                onClick={() => setTab(t)}
-                className="!text-xs capitalize"
-              >
-                {t}
-              </MangaButton>
-            ))}
-          </div>
-        </div>
-
-        {filtered.length === 0 ? (
-          <div className="speech-bubble text-center">
-            <p className="font-display text-xl text-manga-text">
-              {tab === "draft" ? "No drafts yet — save progress in the wizard!" : "No resumes here yet."}
-            </p>
-            <MangaButton href="/wizard" variant="teal" className="mt-4">
-              Create one now
-            </MangaButton>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {filtered.map((r) => (
-              <ResumeCard key={r.id} item={r} onDelete={load} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {profiles.length > 0 && (
-        <section>
-          <h2 className="mb-4 font-display text-2xl text-manga-text">Profiles</h2>
-          <div className="grid gap-3">
-            {profiles.map((p) => (
-              <div key={p.id} className="manga-panel flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-bold text-manga-text">{p.full_name}</p>
-                  <p className="text-sm text-manga-muted">
-                    {p.target_role || "No role"} · {p.email}
-                  </p>
-                </div>
-                <Link href={`/wizard?profile=${p.id}`} className="btn-ghost shrink-0 text-sm">
-                  Edit
-                </Link>
+          <section>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-3xl text-manga-text">My Resumes</h2>
+              <div className="flex flex-wrap gap-2">
+                {(["all", "finished", "draft"] as Tab[]).map((t) => (
+                  <MangaButton
+                    key={t}
+                    variant={tab === t ? "primary" : "ghost"}
+                    onClick={() => setTab(t)}
+                    className="!text-xs capitalize"
+                  >
+                    {t}
+                  </MangaButton>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="speech-bubble text-center">
+                <p className="font-display text-xl text-manga-text">
+                  {tab === "draft"
+                    ? "No drafts yet — save progress in the wizard!"
+                    : "No resumes here yet."}
+                </p>
+                <MangaButton href="/wizard" variant="teal" className="mt-4">
+                  Create one now
+                </MangaButton>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {filtered.map((r) => (
+                  <ResumeCard key={r.id} item={r} onDelete={load} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {profiles.length > 0 && (
+            <section>
+              <h2 className="mb-4 font-display text-2xl text-manga-text">Profiles</h2>
+              <div className="grid gap-3">
+                {profiles.map((p) => (
+                  <div key={p.id} className="manga-panel flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-manga-text">{p.full_name}</p>
+                      <p className="text-sm text-manga-muted">
+                        {p.target_role || "No role"} · {p.email}
+                      </p>
+                    </div>
+                    <Link href={`/wizard?profile=${p.id}`} className="btn-ghost shrink-0 text-sm">
+                      Edit
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

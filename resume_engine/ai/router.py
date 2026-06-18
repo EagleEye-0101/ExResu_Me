@@ -294,7 +294,7 @@ def list_providers() -> list[dict]:
         {"id": "ollama", "name": "Ollama (Local)", "requires_key": False},
         {
             "id": "google_ai_studio",
-            "name": "Google AI Studio (Gemini — free API)",
+            "name": "Gemini",
             "requires_key": True,
             "docs_url": "https://aistudio.google.com/apikey",
             "default_model": DEFAULT_FLASH_MODEL,
@@ -309,7 +309,7 @@ def list_providers() -> list[dict]:
         {"id": "anthropic", "name": "Anthropic", "requires_key": True},
         {
             "id": "gemini",
-            "name": "Google Gemini (legacy id)",
+            "name": "Gemini",
             "requires_key": True,
             "docs_url": "https://aistudio.google.com/apikey",
         },

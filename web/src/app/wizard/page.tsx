@@ -15,6 +15,7 @@ import {
   ExperienceInput,
   Profile,
 } from "@/lib/api";
+import { DEFAULT_PROVIDER, resolveProviderFromSettings } from "@/lib/defaultProvider";
 import { validateStep } from "@/lib/validation";
 
 const STEPS = ["Profile", "Experience", "Education", "Skills", "Job Posting", "Generate"];
@@ -55,7 +56,7 @@ function WizardContent() {
   const [profileId, setProfileId] = useState<number | null>(null);
   const [draftId, setDraftId] = useState<number | null>(null);
   const [jobDescription, setJobDescription] = useState("");
-  const [provider, setProvider] = useState("ollama");
+  const [provider, setProvider] = useState(DEFAULT_PROVIDER);
   const [templateId, setTemplateId] = useState("compact");
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -92,7 +93,7 @@ function WizardContent() {
   useEffect(() => {
     setProfile((p) => ({ ...p, phone_country_code: p.phone_country_code || guessDefaultDial() }));
     api.getSettings().then((s) => {
-      if (s.default_ai_provider) setProvider(s.default_ai_provider);
+      setProvider(resolveProviderFromSettings(s));
     }).catch(() => {});
   }, []);
 

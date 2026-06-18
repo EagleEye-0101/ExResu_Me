@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FormField, TextInput } from "@/components/FormField";
 import { MangaButton } from "@/components/MangaButton";
 import { api, AppSettings } from "@/lib/api";
+import { DEFAULT_PROVIDER } from "@/lib/defaultProvider";
 
 const PROVIDER_FIELDS: {
   id: string;
@@ -16,8 +17,8 @@ const PROVIDER_FIELDS: {
 }[] = [
   { id: "ollama", label: "Ollama (Local)", modelField: "ollama_model" },
   {
-    id: "gemini",
-    label: "Google AI Studio (Gemini — free API)",
+    id: "google_ai_studio",
+    label: "Gemini",
     keyField: "gemini_api_key",
     keySetField: "gemini_api_key_set",
     modelField: "gemini_model",
@@ -66,12 +67,15 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Partial<AppSettings>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [testProvider, setTestProvider] = useState("ollama");
+  const [testProvider, setTestProvider] = useState(DEFAULT_PROVIDER);
   const [testResult, setTestResult] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    api.getSettings().then(setSettings).finally(() => setLoading(false));
+    api.getSettings().then((s) => {
+      setSettings(s);
+      if (s.default_ai_provider) setTestProvider(s.default_ai_provider);
+    }).finally(() => setLoading(false));
   }, []);
 
   const save = async () => {
@@ -113,7 +117,7 @@ export default function SettingsPage() {
         <FormField label="Default AI provider">
           <select
             className="input"
-            value={settings.default_ai_provider || "ollama"}
+            value={settings.default_ai_provider || DEFAULT_PROVIDER}
             onChange={(e) =>
               setSettings((s) => ({ ...s, default_ai_provider: e.target.value }))
             }
@@ -189,7 +193,7 @@ export default function SettingsPage() {
                     }
                   />
                 </FormField>
-                {p.id === "gemini" ? (
+                {p.id === "google_ai_studio" ? (
                   <>
                     <FormField label="Model (Flash — free tier)">
                       <select

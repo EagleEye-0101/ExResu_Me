@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ATSReportPanel } from "@/components/ATSReport";
+import { FileUpload } from "@/components/FileUpload";
 import { MangaButton } from "@/components/MangaButton";
 import { api, ATSReport } from "@/lib/api";
 
@@ -50,20 +51,12 @@ export default function AtsCheckPage() {
       </section>
 
       <div className="manga-panel space-y-4">
-        <label className="block">
-          <span className="text-sm font-bold text-manga-text">Resume file</span>
-          <input
-            type="file"
-            accept=".pdf,.docx,.txt"
-            className="mt-2 block w-full text-sm"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
-        </label>
-        {file && (
-          <p className="text-xs text-manga-muted">
-            Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)
-          </p>
-        )}
+        <FileUpload
+          label="Resume file"
+          accept=".pdf,.docx,.txt"
+          file={file}
+          onChange={setFile}
+        />
         <label className="block">
           <span className="text-sm font-bold text-manga-text">
             Job description <span className="font-normal text-manga-muted">(optional, improves keyword score)</span>

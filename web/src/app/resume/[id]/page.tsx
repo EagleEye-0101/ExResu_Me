@@ -12,6 +12,7 @@ import { ResumePreview } from "@/components/ResumePreview";
 import { SegmentedTabs } from "@/components/SegmentedTabs";
 import { TemplatePicker } from "@/components/TemplatePicker";
 import { api, ATSReport, ResumeData } from "@/lib/api";
+import { DEFAULT_PROVIDER } from "@/lib/defaultProvider";
 
 type Tab = "edit" | "preview" | "ats" | "tools";
 
@@ -32,7 +33,7 @@ function ResumePageInner() {
   const [resume, setResume] = useState<ResumeData | null>(null);
   const [report, setReport] = useState<ATSReport | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
-  const [provider, setProvider] = useState("ollama");
+  const [provider, setProvider] = useState(DEFAULT_PROVIDER);
   const [tab, setTab] = useState<Tab>(
     TABS.some((t) => t.key === initialTab) ? initialTab : "edit"
   );
@@ -64,7 +65,7 @@ function ResumePageInner() {
         const r = data.resume ?? null;
         setResume(r);
         setReport(data.ats_report ?? null);
-        setProvider(data.provider || "ollama");
+        setProvider(data.provider || DEFAULT_PROVIDER);
         setTemplateId(data.template_id || "compact");
         setDirty(false);
         const cl = await api.getCoverLetter(id).catch(() => ({ cover_letter: "" }));

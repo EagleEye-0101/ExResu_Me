@@ -152,7 +152,7 @@ function LatexStudioInner() {
       <section className="manga-panel-accent">
         <p className="font-display text-lg text-manga-accent">LATEX STUDIO</p>
         <h1 className="font-display text-3xl text-manga-text sm:text-4xl">
-          Overleaf-style resume editor
+          LaTeX resume editor
         </h1>
         <p className="mt-2 text-manga-muted">
           Professional LaTeX templates — edit source, compile, download PDF, or print.

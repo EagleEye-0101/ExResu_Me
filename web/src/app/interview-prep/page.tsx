@@ -2,8 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { FileUpload } from "@/components/FileUpload";
 import { MangaButton } from "@/components/MangaButton";
-import { api, ResumeListItem } from "@/lib/api";
+import { api, isLocalDevHost, ResumeListItem } from "@/lib/api";
+import { DEFAULT_PROVIDER, resolveProviderFromSettings } from "@/lib/defaultProvider";
 
 type Mode = "upload" | "saved";
 
@@ -17,7 +19,7 @@ function InterviewPrepContent() {
   );
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [jobDescription, setJobDescription] = useState("");
-  const [provider, setProvider] = useState("ollama");
+  const [provider, setProvider] = useState(DEFAULT_PROVIDER);
   const [providers, setProviders] = useState<{ id: string; name: string }[]>([]);
   const [questions, setQuestions] = useState<{ question: string; tip: string }[]>([]);
   const [candidateName, setCandidateName] = useState("");
@@ -25,10 +27,13 @@ function InterviewPrepContent() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const local = isLocalDevHost();
     api.listResumes({ status: "finished" }).then(setResumes).catch(() => []);
-    api.providers().then(setProviders).catch(() => []);
+    api.providers().then((list) => {
+      setProviders(local ? list : list.filter((p) => p.id !== "ollama"));
+    }).catch(() => []);
     api.getSettings().then((s) => {
-      if (s.default_ai_provider) setProvider(s.default_ai_provider);
+      setProvider(resolveProviderFromSettings(s));
     }).catch(() => {});
   }, []);
 
@@ -91,11 +96,11 @@ function InterviewPrepContent() {
         </div>
 
         {mode === "upload" ? (
-          <input
-            type="file"
+          <FileUpload
+            label="Resume file"
             accept=".pdf,.docx,.txt"
-            className="block w-full text-sm"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            file={file}
+            onChange={setFile}
           />
         ) : (
           <select
